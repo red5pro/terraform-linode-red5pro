@@ -77,7 +77,7 @@ resource "linode_instance" "standalone_instance" {
         subnet_id = local.subnet_id
     }
 
-    tags       = ["example-tag"]
+    tags       = ["example_tag"]
     swap_size  = 512
 
     provisioner "file" {
@@ -288,7 +288,7 @@ resource "linode_instance" "red5pro_kafka" {
     subnet_id = local.subnet_id
   }
 
-  tags       = ["test"]
+  tags       = ["example_tag"]
   swap_size  = 512
 }
 
@@ -325,7 +325,7 @@ resource "null_resource" "red5pro_kafka" {
     ]
 
     connection {
-      host        = tolist(tolist(linode_instance.red5pro_kafka)[0].ipv4)[0]
+      host        = tolist(linode_instance.red5pro_kafka[0].ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -366,7 +366,7 @@ resource "linode_instance" "red5pro_sm" {
     subnet_id = local.subnet_id
   }
 
-    tags       = ["test"]
+    tags       = ["example_tag"]
     swap_size  = 512
 
   provisioner "remote-exec" {
@@ -395,7 +395,6 @@ resource "linode_instance" "red5pro_sm" {
       "TF_VAR_linode_api_token=${var.linode_api_token}",
       "TF_VAR_linode_root_user_password=${var.linode_root_user_password}",
       "TF_VAR_linode_ssh_key_name=${var.linode_ssh_key_name}",
-      
       "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
       "TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}",
@@ -404,7 +403,7 @@ resource "linode_instance" "red5pro_sm" {
       "EOM"
     ]
     connection {
-      host        = tolist(tolist(linode_instance.red5pro_kafka)[0].ipv4)[0]
+      host        = tolist(linode_instance.red5pro_sm[0].ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -429,8 +428,6 @@ resource "null_resource" "red5pro_sm" {
 
   provisioner "remote-exec" {
     inline = [
-      "id -u ubuntu || sudo useradd -m ubuntu",
-      "usermod -aG sudo ubuntu",
       "sudo cloud-init status --wait",
       "sudo mkdir -p /usr/local/stream-manager",
       "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
@@ -439,16 +436,28 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip != [] ? local.kafka_ip[0] : "default_ip"}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TRAEFIK_IP=${tolist(linode_instance.red5pro_sm[0].ipv4)[0]}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TF_VAR_linode_api_token=${var.linode_api_token}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TF_VAR_linode_root_user_password=${var.linode_root_user_password}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TF_VAR_linode_ssh_key_name=${var.linode_ssh_key_name}' | sudo tee -a /usr/local/stream-manager/.env",
+      "sudo sed -i 's/^TF_VAR_oci_tenancy_ocid: .*/TF_VAR_linode_api_token: ${var.linode_api_token}/' /usr/local/stream-manager/docker-compose.yml",
+      "sudo sed -i 's/^TF_VAR_oci_user_ocid: .*/TF_VAR_linode_ssh_key_name: red5pro_ssh_public_key/' /usr/local/stream-manager/docker-compose.yml",
+      "sudo sed -i 's/^TF_VAR_oci_compartment_id: .*/TF_VAR_linode_root_user_password: linode@password/' /usr/local/stream-manager/docker-compose.yml",
+      "sudo sed -i 's/^TF_VAR_oci_fingerprint:/d' /usr/local/stream-manager/docker-compose.yml",
+      "sudo sed -i 's/^TF_VAR_oci_private_key_path:/d' /usr/local/stream-manager/docker-compose.yml",
+      "sudo sed -i 's/^TF_VAR_oci_node_ssh_public_key_path:/d' /usr/local/stream-manager/docker-compose.yml",
+      "sudo sed -i 's/^volumes:/,/^$/d' /usr/local/stream-manager/docker-compose.yml",
+      "sudo sed -i 's/R5AS_CLOUD_PLATFORM_TYPE:.*/R5AS_CLOUD_PLATFORM_TYPE: LINODE/' /usr/local/stream-manager/docker-compose.yml",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
+      "mkdir /home/ubuntu/red5pro-installer",
       "mv /home/ubuntu/* /home/ubuntu/red5pro-installer/",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_sm2_oci.sh",
     ]
     connection {
-      host        = tolist(tolist(linode_instance.red5pro_kafka)[0].ipv4)[0]
+      host        = tolist(linode_instance.red5pro_sm[0].ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -473,7 +482,7 @@ resource "linode_instance" "red5pro_node" {
     subnet_id = local.subnet_id
   }
 
-  tags       = ["test"]
+  tags       = ["example_tag"]
   swap_size  = 512
 
   authorized_keys = [
