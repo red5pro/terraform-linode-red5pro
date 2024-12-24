@@ -95,7 +95,7 @@ services:
       SPRINGDOC_SWAGGER_UI_URLS_2_NAME: streams
       SPRINGDOC_SWAGGER_UI_URLS_3_URL: /as/v1/admin/v3/api-docs
       SPRINGDOC_SWAGGER_UI_URLS_3_NAME: autoscale-admin
-      R5AS_CLOUD_PLATFORM_TYPE: ${R5AS_CLOUD_PLATFORM_TYPE:-OCI} # AWS, OCI, LINODE
+      R5AS_CLOUD_PLATFORM_TYPE: ${R5AS_CLOUD_PLATFORM_TYPE:-LINODE} # AWS, OCI, LINODE
       R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
       R5AS_AUTH_JWT_TTL_MINUTES: 400
     labels:
@@ -134,17 +134,10 @@ services:
       R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
       R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
       R5AS_COMMAND_INACTIVITY_GAP_MS: 10000
-      TF_VAR_oci_tenancy_ocid: ${TF_VAR_oci_tenancy_ocid:?Ensure TF_VAR_oci_tenancy_ocid is set to the OCI tenancy OCID}
-      TF_VAR_oci_user_ocid: ${TF_VAR_oci_user_ocid:?Ensure TF_VAR_oci_user_ocid is set to the OCI user OCID}
-      TF_VAR_oci_compartment_id: ${TF_VAR_oci_compartment_id:?Ensure TF_VAR_oci_compartment_id is set to the OCI compartment OCID}
-      TF_VAR_oci_fingerprint: ${TF_VAR_oci_fingerprint:?Ensure TF_VAR_oci_fingerprint is set to the OCI user fingerprint}
-      TF_VAR_oci_private_key_path: /keys/oracle_private_api_key.pem
-      TF_VAR_oci_node_ssh_public_key_path: /keys/red5pro_ssh_public_key.pub
+      TF_VAR_linode_api_token: ${TF_VAR_linode_api_token}
+      TF_VAR_linode_root_user_password: example123
+      TF_VAR_linode_ssh_key_name: r5pro-ssh-key
       TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key:?Ensure TF_VAR_r5p_license_key is set to the Red5 Pro license key}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./keys/oracle_private_api_key.pem:/keys/oracle_private_api_key.pem
-      - ./keys/red5pro_ssh_public_key.pub:/keys/red5pro_ssh_public_key.pub
 
   as-proxy:
     image: red5pro/as-proxy:latest

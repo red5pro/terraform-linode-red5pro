@@ -529,7 +529,7 @@ variable "node_group_create" {
 variable "node_group_name" {
   description = "Node group name"
   type        = string
-  default     = "terraform-node-group"
+  default     = "test-node-group"
 }
 variable "node_group_origins_min" {
   description = "Number of minimum Origins"
@@ -544,7 +544,7 @@ variable "node_group_origins_max" {
 variable "node_group_origins_instance_type" {
   description = "Instance type for Origins"
   type        = string
-  default     = "g6-dedicated-4"
+  default     = "g6-dedicated-2"
 }
 
 variable "node_group_edges_min" {
@@ -560,7 +560,7 @@ variable "node_group_edges_max" {
 variable "node_group_edges_instance_type" {
   description = "Instance type for Edges"
   type        = string
-  default     = "g6-dedicated-4"
+  default     = "g6-dedicated-2"
 }
 variable "node_group_transcoders_min" {
   description = "Number of minimum Transcoders"
@@ -575,7 +575,7 @@ variable "node_group_transcoders_max" {
 variable "node_group_transcoders_instance_type" {
   description = "Instance type for Transcoders"
   type        = string
-  default     = "g6-dedicated-4"
+  default     = "g6-dedicated-2"
 }
 variable "node_group_relays_min" {
   description = "Number of minimum Relays"
@@ -590,7 +590,7 @@ variable "node_group_relays_max" {
 variable "node_group_relays_instance_type" {
   description = "Instance type for Relays"
   type        = string
-  default     = "g6-dedicated-4"
+  default     = "g6-dedicated-2"
 }
 variable "node_group_origins_volume_size" {
   description = "Volume size in GB for Origins. Minimum 50GB"

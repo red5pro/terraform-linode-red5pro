@@ -7,20 +7,20 @@ locals {
   vcn_name                      = linode_vpc.red5vpc.label
   subnet_id                     = linode_vpc_subnet.red5subnet.id
   subnet_name                   = linode_vpc_subnet.red5subnet.label
-  stream_manager_ip             = local.standalone ? tolist(linode_instance.standalone_instance[0].ipv4)[0] : "null"
+  stream_manager_ip             = local.standalone ? [tolist(linode_instance.standalone_instance[0].ipv4)[0]] : (local.autoscale ? flatten([tolist(linode_instance.red5pro_sm)[0].ipv4]) : (local.cluster ? flatten([tolist(linode_instance.red5pro_sm)[0].ipv4]) : []))
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
   ssh_public_key_path           = var.ssh_key_use_existing ? var.ssh_key_existing_public_key_path : local_file.red5pro_ssh_key_pub[0].filename
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
   ssh_public_key                = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : tls_private_key.red5pro_ssh_key[0].public_key_openssh
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
-  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? flatten([tolist(linode_instance.red5pro_kafka)[0].ipv4]) : flatten([tolist(linode_instance.red5pro_sm)[0].ipv4]) : []
+  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? flatten([tolist(linode_instance.red5pro_kafka)[0].private_ip_address]) : flatten([tolist(linode_instance.red5pro_sm)[0].private_ip_address]) : []
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
   stream_manager_ssl            = var.https_ssl_certificate
   stream_manager_standalone     = local.autoscale ? false : true
-  stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
+  stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip[0]}" : "http://${local.stream_manager_ip[0]}"
 }
 
 ################################################################################
@@ -77,8 +77,7 @@ resource "linode_instance" "standalone_instance" {
         subnet_id = local.subnet_id
     }
 
-    tags       = ["example_tag"]
-    swap_size  = 512
+    tags       = ["test"]
 
     provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
@@ -267,7 +266,7 @@ resource "tls_locally_signed_cert" "kafka_server_cert" {
 }
 
 ################################################################################
-# Kafka server - (OCI Instance)
+# Kafka server - (Linode Instance)
 ################################################################################
 resource "linode_instance" "red5pro_kafka" {
   count           = local.kafka_standalone_instance ? 1 : 0
@@ -288,8 +287,8 @@ resource "linode_instance" "red5pro_kafka" {
     subnet_id = local.subnet_id
   }
 
-  tags       = ["example_tag"]
-  swap_size  = 512
+  tags       = ["test"]
+  private_ip = true
 }
 
 resource "null_resource" "red5pro_kafka" {
@@ -337,7 +336,7 @@ resource "null_resource" "red5pro_kafka" {
 
 
 ################################################################################
-# Red5 Pro Stream Manager 2.0 - (OCI Instance)
+# Red5 Pro Stream Manager 2.0 - (Linode Instance)
 ################################################################################
 
 # Generate random password for Red5 Pro Stream Manager 2.0 authentication
@@ -366,8 +365,8 @@ resource "linode_instance" "red5pro_sm" {
     subnet_id = local.subnet_id
   }
 
-    tags       = ["example_tag"]
-    swap_size  = 512
+    tags       = ["test"]
+    private_ip = true
 
   provisioner "remote-exec" {
     inline = [
@@ -380,7 +379,7 @@ resource "linode_instance" "red5pro_sm" {
       "sudo echo '${try(file(var.https_ssl_certificate_key_path), "")}' > /usr/local/stream-manager/certs/privkey.pem",
 
       # Write SSH public key
-      "sudo echo -n '${local.ssh_public_key}' > /usr/local/stream-manager/keys/red5pro_ssh_public_key.pub",
+      "sudo echo -n '${local.ssh_public_key}' > /usr/local/stream-manager/keys/red5pro_ssh_public_key",
 
       # Create .env file with environment variables
       "cat >> /usr/local/stream-manager/.env <<- EOM",
@@ -434,19 +433,12 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip != [] ? local.kafka_ip[0] : "default_ip"}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TRAEFIK_IP=${tolist(linode_instance.red5pro_sm[0].ipv4)[0]}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TF_VAR_linode_api_token=${var.linode_api_token}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TF_VAR_linode_root_user_password=${var.linode_root_user_password}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TF_VAR_linode_ssh_key_name=${var.linode_ssh_key_name}' | sudo tee -a /usr/local/stream-manager/.env",
-      "sudo sed -i 's/^TF_VAR_oci_tenancy_ocid: .*/TF_VAR_linode_api_token: ${var.linode_api_token}/' /usr/local/stream-manager/docker-compose.yml",
-      "sudo sed -i 's/^TF_VAR_oci_user_ocid: .*/TF_VAR_linode_ssh_key_name: red5pro_ssh_public_key/' /usr/local/stream-manager/docker-compose.yml",
-      "sudo sed -i 's/^TF_VAR_oci_compartment_id: .*/TF_VAR_linode_root_user_password: linode@password/' /usr/local/stream-manager/docker-compose.yml",
-      "sudo sed -i 's/^TF_VAR_oci_fingerprint:/d' /usr/local/stream-manager/docker-compose.yml",
-      "sudo sed -i 's/^TF_VAR_oci_private_key_path:/d' /usr/local/stream-manager/docker-compose.yml",
-      "sudo sed -i 's/^TF_VAR_oci_node_ssh_public_key_path:/d' /usr/local/stream-manager/docker-compose.yml",
-      "sudo sed -i 's/^volumes:/,/^$/d' /usr/local/stream-manager/docker-compose.yml",
-      "sudo sed -i 's/R5AS_CLOUD_PLATFORM_TYPE:.*/R5AS_CLOUD_PLATFORM_TYPE: LINODE/' /usr/local/stream-manager/docker-compose.yml",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
@@ -482,8 +474,8 @@ resource "linode_instance" "red5pro_node" {
     subnet_id = local.subnet_id
   }
 
-  tags       = ["example_tag"]
-  swap_size  = 512
+  tags       = ["test"]
+  private_ip = true
 
   authorized_keys = [
     replace(local.ssh_public_key, "\n", "")
@@ -537,10 +529,10 @@ resource "linode_instance" "red5pro_node" {
 }
 
 ####################################################################################################
-# Red5 Pro Autoscaling Nodes create images - Origin/Edge/Transcoders/Relay (OCI Custom Images)
+# Red5 Pro Autoscaling Nodes create images - Origin/Edge/Transcoders/Relay (Linode Custom Images)
 ####################################################################################################
 
-# Node - Create image (OCI Custom Images)
+# Node - Create image (Linode Custom Images)
 resource "linode_image" "red5pro_node_image" {
   count       = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
   label       = "${var.name}-node-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
@@ -562,16 +554,6 @@ resource "time_sleep" "wait_for_delete_nodegroup" {
     null_resource.red5pro_kafka[0],
     linode_instance.red5pro_sm[0],
     linode_instance.red5pro_kafka[0],
-    #oci_load_balancer_load_balancer.red5pro_lb[0],
-    #oci_core_instance_pool.red5pro_instance_pool[0],
-    #oci_core_network_security_group.red5pro_stream_manager_network_security_group[0],
-    #oci_core_network_security_group_security_rule.red5pro_stream_manager_nsg_security_rule_ingress[0],
-    #oci_core_network_security_group.red5pro_kafka_network_security_group[0],
-    #oci_core_network_security_group_security_rule.red5pro_kafka_nsg_security_rule_ingress[0],
-    #oci_core_network_security_group_security_rule.red5pro_kafka_nsg_security_rule_ingress[1],
-    #oci_core_route_table_attachment.red5pro_route_table_attachment,
-    #linode_vpc.red5pro_vcn,
-    #oci_core_network_security_group.red5pro_node_network_security_group[0],
   ]
   destroy_duration = "90s"
 }
@@ -593,16 +575,17 @@ resource "null_resource" "node_group" {
       R5AS_AUTH_PASS                           = "${var.stream_manager_auth_password}"
       NODE_GROUP_REGION                        = "${var.node_image_region}"
       NODE_ENVIRONMENT                         = "${var.name}"
-      NODE_SUBNET_NAME                         = "${local.subnet_name}"
-      #NODE_SECURITY_GROUP_NAME                 = "${oci_core_network_security_group.red5pro_node_network_security_group[0].display_name}"
+      NODE_SUBNET_NAME                         = "${var.vpc_label}" 
+      NODE_SECURITY_GROUP_NAME                 = "${var.node_firewall_label}"
       NODE_IMAGE_NAME                          = "${linode_image.red5pro_node_image[0].label}"
+      NODE_CLOUD_PLATFORM                      = "LINODE"
       ORIGINS_MIN                              = "${var.node_group_origins_min}"
       ORIGINS_MAX                              = "${var.node_group_origins_max}"
-      ORIGIN_INSTANCE_TYPE                     = "${var.node_group_origins_instance_type}"
+      ORIGIN_INSTANCE_TYPE                     = "${var.node_image_instance_type}"
       ORIGIN_VOLUME_SIZE                       = "${var.node_group_origins_volume_size}"
       EDGES_MIN                                = "${var.node_group_edges_min}"
       EDGES_MAX                                = "${var.node_group_edges_max}"
-      EDGE_INSTANCE_TYPE                       = "${var.node_group_edges_instance_type}"
+      EDGE_INSTANCE_TYPE                       = "${var.node_image_instance_type}"
       EDGE_VOLUME_SIZE                         = "${var.node_group_edges_volume_size}"
       TRANSCODERS_MIN                          = "${var.node_group_transcoders_min}"
       TRANSCODERS_MAX                          = "${var.node_group_transcoders_max}"

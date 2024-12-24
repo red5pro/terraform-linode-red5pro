@@ -29,7 +29,7 @@ module "red5pro" {
   stream_manager_auth_password        = "example_password"    # Stream Manager 2.0 authentication password
 
   # Kafka standalone instance configuration - (Optional)
-  kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
+  kafka_standalone_instance_create      = false                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
   kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
@@ -83,22 +83,22 @@ module "red5pro" {
   }
 
   # Red5 Pro autoscaling Node group - (Optional)
-  node_group_create                    = true                      # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_create                    = false                     # Linux or Mac OS only. true - create new Node group, false - not create new Node group
   node_group_origins_min               = 1                         # Number of minimum Origins
   node_group_origins_max               = 20                        # Number of maximum Origins
-  node_group_origins_instance_type     = "VM.Standard.E4.Flex-1-4" # Origins Linode Instance Type(1 OCPU = 2 VCPUs) <shape>-<cpu>-<memory> eg. VM.Standard.E4.Flex-1-4
+  node_group_origins_instance_type     = "g6-dedicated-2"          # Origins Linode Instance Type
   node_group_origins_volume_size       = 50                        # Volume size in GB for Origins
   node_group_edges_min                 = 1                         # Number of minimum Edges
   node_group_edges_max                 = 40                        # Number of maximum Edges
-  node_group_edges_instance_type       = "VM.Standard.E4.Flex-1-4" # Edges Linode Instance Type(1 OCPU = 2 VCPUs) <shape>-<cpu>-<memory> eg. VM.Standard.E4.Flex-1-4
+  node_group_edges_instance_type       = "g6-dedicated-2"          # Edges Linode Instance Type
   node_group_edges_volume_size         = 50                        # Volume size in GB for Edges
   node_group_transcoders_min           = 0                         # Number of minimum Transcoders
   node_group_transcoders_max           = 20                        # Number of maximum Transcoders
-  node_group_transcoders_instance_type = "VM.Standard.E4.Flex-1-4" # Transcoders Linode Instance Type(1 OCPU = 2 VCPUs) <shape>-<cpu>-<memory> eg. VM.Standard.E4.Flex-1-4
+  node_group_transcoders_instance_type = "g6-dedicated-2"          # Transcoders Linode Instance Type
   node_group_transcoders_volume_size   = 50                        # Volume size in GB for Transcoders
   node_group_relays_min                = 0                         # Number of minimum Relays
   node_group_relays_max                = 20                        # Number of maximum Relays
-  node_group_relays_instance_type      = "VM.Standard.E4.Flex-1-4" # Relays Linode Instance Type(1 OCPU = 2 VCPUs) <shape>-<cpu>-<memory> eg. VM.Standard.E4.Flex-1-4
+  node_group_relays_instance_type      = "g6-dedicated-2"          # Relays Linode Instance Type
   node_group_relays_volume_size        = 50                        # Volume size in GB for Relays
 }
 
