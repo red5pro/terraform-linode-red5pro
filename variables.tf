@@ -182,7 +182,7 @@ variable "name" {
 variable "type" {
   description = "Type of deployment: standalone, cluster, autoscale"
   type        = string
-  default     = ""
+  default     = "standalone"
   validation {
     condition     = var.type == "standalone" || var.type == "cluster" || var.type == "autoscale"
     error_message = "The type value must be a valid! Example: autoscale, cluster or autoscale"
@@ -426,14 +426,20 @@ variable "kafka_instance_type" {
   default     = "g6-dedicated-4"
 }
 variable "linode_root_user_password" {
-  description = "Password for root user"
+  description = "Root user password"
   type        = string
-  default     = "password123"
+  default     = "example123"  
 }
 variable "linode_ssh_key_name" {
   description = "SSH key name"
   type        = string
-  default     = "r5pro-ssh-key"  
+  default     = "red5pro_ssh_public_key"  
+}
+
+variable "R5AS_CLOUD_PLATFORM_TYPE" {
+  description = "The cloud platform type"
+  type        = string
+  default     = "LINODE"
 }
 
 # Red5 Pro Node image configuration
@@ -555,7 +561,7 @@ variable "node_group_edges_min" {
 variable "node_group_edges_max" {
   description = "Number of maximum Edges"
   type        = number
-  default     = 40
+  default     = 20
 }
 variable "node_group_edges_instance_type" {
   description = "Instance type for Edges"
