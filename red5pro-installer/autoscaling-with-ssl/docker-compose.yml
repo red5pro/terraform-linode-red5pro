@@ -135,8 +135,8 @@ services:
       R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
       R5AS_COMMAND_INACTIVITY_GAP_MS: 10000
       TF_VAR_linode_api_token: ${TF_VAR_linode_api_token}
-      TF_VAR_linode_root_user_password: example123
-      TF_VAR_linode_ssh_key_name: r5pro-ssh-key
+      TF_VAR_linode_root_user_password: ${TF_VAR_linode_root_user_password}
+      TF_VAR_linode_ssh_key_name: ${TF_VAR_linode_ssh_key_name}
       TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key:?Ensure TF_VAR_r5p_license_key is set to the Red5 Pro license key}
 
   as-proxy:

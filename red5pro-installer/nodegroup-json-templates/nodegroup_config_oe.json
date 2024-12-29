@@ -1,7 +1,7 @@
 {
     "name": "nodegroup-oe",
     "description": "This is an LINODE nodegroup example",
-    "cloudProperties": "environment=NODE_ENVIRONMENT;subnet=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME;volume_size=16",
+    "cloudProperties": "environment=NODE_ENVIRONMENT;vpc=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME;volume_size=16",
     "cloudPlatform": "LINODE",
     "isScalingPaused": false,
     "images": {

@@ -13,7 +13,7 @@ locals {
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
   ssh_public_key                = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : tls_private_key.red5pro_ssh_key[0].public_key_openssh
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
-  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? flatten([tolist(linode_instance.red5pro_kafka)[0].private_ip_address]) : flatten([tolist(linode_instance.red5pro_sm)[0].private_ip_address]) : []
+  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? linode_instance.red5pro_kafka[0].interface[1].ipv4[0].vpc : linode_instance.red5pro_sm[0].interface[1].ipv4[0].vpc : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
@@ -231,8 +231,7 @@ resource "tls_self_signed_cert" "ca_cert" {
 resource "tls_cert_request" "kafka_server_csr" {
   count            = local.cluster_or_autoscale ? 1 : 0
   private_key_pem  = tls_private_key.kafka_server_key[0].private_key_pem
-  ip_addresses     = [local.kafka_ip[0]]
-  #ip_addresses     = local.kafka_ip != "0.0.0.0" ? [local.kafka_ip] : []
+  ip_addresses     = [local.kafka_ip]
   dns_names        = ["kafka0"]
 
   subject {
@@ -373,14 +372,9 @@ resource "linode_instance" "red5pro_sm" {
       # Create necessary directories
       "sudo mkdir -p /usr/local/stream-manager/keys",
       "sudo mkdir -p /usr/local/stream-manager/certs",
-
       # Write certificate and key files
       "sudo echo '${try(file(var.https_ssl_certificate_cert_path), "")}' > /usr/local/stream-manager/certs/cert.pem",
       "sudo echo '${try(file(var.https_ssl_certificate_key_path), "")}' > /usr/local/stream-manager/certs/privkey.pem",
-
-      # Write SSH public key
-      "sudo echo -n '${local.ssh_public_key}' > /usr/local/stream-manager/keys/red5pro_ssh_public_key",
-
       # Create .env file with environment variables
       "cat >> /usr/local/stream-manager/.env <<- EOM",
       "KAFKA_CLUSTER_ID=${random_id.kafka_cluster_id[0].b64_std}",
@@ -391,10 +385,11 @@ resource "linode_instance" "red5pro_sm" {
       "R5AS_AUTH_SECRET=${random_password.r5as_auth_secret[0].result}",
       "R5AS_AUTH_USER=${var.stream_manager_auth_user}",
       "R5AS_AUTH_PASS=${var.stream_manager_auth_password}",
-      "TF_VAR_linode_api_token=${var.linode_api_token}",
-      "TF_VAR_linode_root_user_password=${var.linode_root_user_password}",
-      "TF_VAR_linode_ssh_key_name=${var.linode_ssh_key_name}",
-      "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
+      "TF_VAR_linode_api_token: ${var.linode_api_token}",
+      "TF_VAR_linode_root_user_password: ${var.linode_root_user_password}",
+      "TF_VAR_linode_ssh_key_name: ${var.linode_ssh_key_name}",
+      "TF_VAR_r5p_license_key: ${var.red5pro_license_key}",
+      "R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
       "TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}",
       "TRAEFIK_SSL_EMAIL=${var.https_ssl_certificate_email}",
@@ -433,12 +428,9 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_IP=${local.kafka_ip != [] ? local.kafka_ip[0] : "default_ip"}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'KAFKA_IP=${local.kafka_ip != [] ? local.kafka_ip : "default_ip"}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TRAEFIK_IP=${tolist(linode_instance.red5pro_sm[0].ipv4)[0]}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TF_VAR_linode_api_token=${var.linode_api_token}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TF_VAR_linode_root_user_password=${var.linode_root_user_password}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TF_VAR_linode_ssh_key_name=${var.linode_ssh_key_name}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",

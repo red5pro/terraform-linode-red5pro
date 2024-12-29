@@ -14,7 +14,7 @@ variable "vpc_region" {
 variable "vpc_description" {
   description = "The description for the VPC"
   type        = string
-  default     = "R5Pro Standalone VPC"
+  default     = "Red5Pro Test VPC"
 }
 
 # Subnet Configuration
@@ -114,6 +114,14 @@ variable "node_firewall_inbound_rules" {
       action   = "ACCEPT"
       protocol = "UDP"
       ports    = "40000-65535"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "kafka-rule-to-check"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "9092"
       ipv4     = ["0.0.0.0/0"]
       ipv6     = ["::/0"]
     }
@@ -428,7 +436,7 @@ variable "kafka_instance_type" {
 variable "linode_root_user_password" {
   description = "Root user password"
   type        = string
-  default     = "example123"  
+  default     = "test@123456789"  
 }
 variable "linode_ssh_key_name" {
   description = "SSH key name"
