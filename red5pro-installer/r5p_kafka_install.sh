@@ -133,11 +133,11 @@ install_kafka() {
             echo 'initial.broker.registration.timeout.ms=240000'
         } >> "$kafka_config_file"
 
-        # Copy extra kafka configuration properties from /home/ubuntu/red5pro-installer/server.properties to "$kafka_config_file"
-        if [[ -f "/home/ubuntu/red5pro-installer/server.properties" ]]; then
-            cat /home/ubuntu/red5pro-installer/server.properties >> "$kafka_config_file"
+        # Copy extra kafka configuration properties from /home/red5pro-installer/server.properties to "$kafka_config_file"
+        if [[ -f "/home/red5pro-installer/server.properties" ]]; then
+            cat /home/red5pro-installer/server.properties >> "$kafka_config_file"
         else
-            log_e "Extra kafka configuration properties file /home/ubuntu/red5pro-installer/server.properties does not exists"
+            log_e "Extra kafka configuration properties file /home/red5pro-installer/server.properties does not exists"
             exit 1
         fi
 
