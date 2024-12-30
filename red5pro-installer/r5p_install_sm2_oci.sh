@@ -102,9 +102,6 @@ install_docker(){
     # Install Docker
     PACKAGES=(docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin)
     install_pkg
-
-    # Add user to the docker group
-    usermod -aG docker ubuntu
 }
 
 config_sm(){

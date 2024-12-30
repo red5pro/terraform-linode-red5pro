@@ -1,14 +1,14 @@
 {
     "name": "nodegroup-o",
-    "description": "Stream Manager 2.0 OCI Node group with Origin only",
-    "cloudProperties": "environment=NODE_ENVIRONMENT;subnet=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME",
-    "cloudPlatform": "OCI",
+    "description": "Stream Manager 2.0 LINODE Node group with Origin only",
+    "cloudProperties": "environment=NODE_ENVIRONMENT;vpc=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME,;volume_size=16",
+    "cloudPlatform": "LINODE",
     "isScalingPaused": false,
     "images": {
-        "origin_image": {
-            "name": "origin_image",
+        "base_image": {
+            "name": "base_image",
             "image": "NODE_IMAGE_NAME",
-            "cloudProperties": "instance_type=ORIGIN_INSTANCE_TYPE;volume_size=ORIGIN_VOLUME_SIZE"
+            "cloudProperties": "instance_type=ORIGIN_INSTANCE_TYPE"
         }
     },
     "roles": {
