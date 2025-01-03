@@ -12,8 +12,31 @@ resource "linode_vpc_subnet" "red5subnet" {
   ipv4         = var.subnet_ipv4
 }
 
-# Stream Manager Firewall
+# Stream Manager Firewall - Standalone
+resource "linode_firewall" "standalone_firewall" {
+  count = local.standalone ? 1 : 0
+  label = var.sm_standalone_firewall_label
+
+  dynamic "inbound" {
+    for_each = var.sm_standalone_firewall_inbound_rules
+    content {
+      label    = inbound.value.label
+      action   = inbound.value.action
+      protocol = inbound.value.protocol
+      ports    = inbound.value.ports
+      ipv4     = inbound.value.ipv4
+      ipv6     = inbound.value.ipv6
+    }
+  }
+
+  inbound_policy  = "ACCEPT"
+  outbound_policy = "ACCEPT"
+  linodes         =  concat(linode_instance.standalone_instance[*].id)
+}
+
+# Stream Manager Firewall - Cluster or autoscale
 resource "linode_firewall" "sm_firewall" {
+  count   = local.cluster_or_autoscale ? 1 : 0
   label = var.sm_firewall_label
 
   dynamic "inbound" {
@@ -30,14 +53,12 @@ resource "linode_firewall" "sm_firewall" {
 
   inbound_policy  = "ACCEPT"
   outbound_policy = "ACCEPT"
-  linodes         =  concat(
-    linode_instance.standalone_instance[*].id,
-    linode_instance.red5pro_sm[*].id
-    )
+  linodes         =  concat(linode_instance.red5pro_sm[*].id)
 }
 
 # Node Firewall
 resource "linode_firewall" "node_firewall" {
+  count   = local.cluster_or_autoscale ? 1 : 0
   label = var.node_firewall_label
 
   dynamic "inbound" {
@@ -54,13 +75,12 @@ resource "linode_firewall" "node_firewall" {
 
   inbound_policy  = "ACCEPT"
   outbound_policy = "ACCEPT"
-    linodes         =  concat(
-    linode_instance.red5pro_node[*].id
-    )
+  linodes         =  concat(linode_instance.red5pro_node[*].id)
 }
 
 # Kafka Firewall
 resource "linode_firewall" "kafka_firewall" {
+  count = var.kafka_standalone_instance_create ? 1 : 0
   label = var.kafka_firewall_label
 
   # Define the inbound firewall rules for Kafka instances
@@ -78,7 +98,5 @@ resource "linode_firewall" "kafka_firewall" {
 
   inbound_policy  = "ACCEPT"
   outbound_policy = "ACCEPT"
-  linodes         = concat(
-    linode_instance.red5pro_kafka[*].id,
-  )
+  linodes         = concat(linode_instance.red5pro_kafka[*].id)
 }

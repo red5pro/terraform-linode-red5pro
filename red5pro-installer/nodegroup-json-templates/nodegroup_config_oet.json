@@ -5,32 +5,22 @@
     "cloudPlatform": "OCI",
     "isScalingPaused": false,
     "images": {
-        "origin_image": {
-            "name": "origin_image",
+        "base_image": {
+            "name": "base_image",
             "image": "NODE_IMAGE_NAME",
-            "cloudProperties": "instance_type=ORIGIN_INSTANCE_TYPE;volume_size=ORIGIN_VOLUME_SIZE"
-        },
-        "edge_image": {
-            "name": "edge_image",
-            "image": "NODE_IMAGE_NAME",
-            "cloudProperties": "instance_type=EDGE_INSTANCE_TYPE;volume_size=EDGE_VOLUME_SIZE"
-        },
-        "transcoder_image": {
-            "name": "transcoder_image",
-            "image": "NODE_IMAGE_NAME",
-            "cloudProperties": "instance_type=TRANSCODER_INSTANCE_TYPE;volume_size=TRANSCODER_VOLUME_SIZE"
+            "cloudProperties": "instance_type=ORIGIN_INSTANCE_TYPE"
         }
     },
     "roles": {
         "origin": {
             "name": "origin",
-            "imageName": "origin_image",
+            "imageName": "base_image",
             "capabilities": ["PUBLISH"],
             "propertyOverrides": []
         },
         "edge": {
             "name": "edge",
-            "imageName": "edge_image",
+            "imageName": "base_image",
             "parentRoleName": "origin",
             "parentCardinality": "GLOBAL",
             "capabilities": ["SUBSCRIBE"],
@@ -38,7 +28,7 @@
         },
         "transcoder": {
             "name": "transcoder",
-            "imageName": "transcoder_image",
+            "imageName": "base_image",
             "capabilities": ["TRANSCODE"],
             "propertyOverrides": []
         }

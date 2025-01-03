@@ -14,7 +14,7 @@
     "roles": {
         "origin": {
             "name": "origin",
-            "imageName": "origin_image",
+            "imageName": "base_image",
             "capabilities": ["PUBLISH", "SUBSCRIBE", "TRANSCODE"],
             "propertyOverrides": []
         }

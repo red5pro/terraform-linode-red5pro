@@ -2,9 +2,9 @@
 # Example: Red5 Pro Stream Manager 2.0 Cluster Deployment
 ##############################################################################
 
-variable linode_api_token {
+variable "linode_api_token" {
     type    = string
-    default = "" 
+    default = "<linode token>" 
 }
 
 module "red5pro" {
@@ -12,6 +12,8 @@ module "red5pro" {
   type                  = "cluster"                               # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-cluster"                       # Name to be used on all the resources as identifier
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
+  linode_api_token      = "<linode token>" 
+  sshkey                = "linode_sshkey"                         # Name of SSHY Key to be created in Linode cloud
 
   # SSH key configuration
   ssh_key_use_existing              = false                                              # true - use existing SSH key, false - create new SSH key

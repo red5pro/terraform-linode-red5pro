@@ -30,6 +30,51 @@ variable "subnet_ipv4" {
   default     = "10.0.0.0/24"
 }
 
+# Firewall Configuration for Stream Manager - Standalone
+variable "sm_standalone_firewall_label" {
+  description = "The label for the stream manager standalone firewall"
+  type        = string
+  default     = "red5pro-autoscaling-sm-sg"
+}
+
+variable "sm_standalone_firewall_inbound_rules" {
+  description = "The inbound firewall rules for stream manager"
+  type = list(object({
+    label    = string
+    action   = string
+    protocol = string
+    ports    = string
+    ipv4     = list(string)
+    ipv6     = list(string)
+  }))
+  default = [
+    {
+      label    = "allow-http"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "80"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "allow-https"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "443"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "kafka-rule"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "9092"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    }
+  ]
+}
+
 # Firewall Configuration for Stream Manager
 variable "sm_firewall_label" {
   description = "The label for the stream manager firewall"
@@ -236,8 +281,13 @@ variable "ubuntu_version" {
 }
 
 variable "linode_api_token" {
-    type = string
+    type    = string
     default = ""
+}
+
+variable "sshkey" {
+  type    = string
+  default = ""
 }
 
 # SSH key configuration
@@ -423,11 +473,13 @@ variable "load_balancer_reserved_ip_existing" {
   type        = string
   default     = ""
 }
+
 variable "kafka_red5pro_region" {
   description = "Region for Kafka Instance"
   type        = string
   default     = "us-lax"
 }
+
 variable "kafka_instance_type" {
   description = "Region for Kafka Instance"
   type        = string
@@ -436,12 +488,7 @@ variable "kafka_instance_type" {
 variable "linode_root_user_password" {
   description = "Root user password"
   type        = string
-  default     = "test@123456789"  
-}
-variable "linode_ssh_key_name" {
-  description = "SSH key name"
-  type        = string
-  default     = "red5pro_ssh_public_key"  
+  default     = "red5pro@1234567899"
 }
 
 variable "R5AS_CLOUD_PLATFORM_TYPE" {

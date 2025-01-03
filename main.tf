@@ -64,9 +64,7 @@ resource "linode_instance" "standalone_instance" {
     image           = "linode/ubuntu22.04"
     region          = var.standalone_red5pro_region
     type            = var.standalone_red5pro_instance_type
-    authorized_keys = [
-      replace(local.ssh_public_key, "\n", "")
-    ]
+    authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
     interface {
         purpose = "public"
@@ -271,9 +269,7 @@ resource "linode_instance" "red5pro_kafka" {
   image           = "linode/ubuntu22.04"
   region          = var.kafka_red5pro_region
   type            = var.kafka_instance_type
-  authorized_keys = [
-    replace(local.ssh_public_key, "\n", "")
-  ]
+  authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
   interface {
     purpose = "public"
@@ -330,6 +326,13 @@ resource "null_resource" "red5pro_kafka" {
   depends_on = [tls_cert_request.kafka_server_csr]
 }
 
+################################################################################
+# LINODE SSH KEY (FROM LINODE CLOUD)
+################################################################################
+resource "linode_sshkey" "sshkey" {
+  label = var.sshkey
+  ssh_key = replace(local.ssh_public_key, "\n", "")
+}
 
 ################################################################################
 # Red5 Pro Stream Manager 2.0 - (Linode Instance)
@@ -348,9 +351,7 @@ resource "linode_instance" "red5pro_sm" {
   image           = "linode/ubuntu22.04"
   region          = var.stream_manager_red5pro_region
   type            = var.stream_manager_instance_type
-  authorized_keys = [
-    replace(local.ssh_public_key, "\n", "")
-  ]
+  authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
   interface {
     purpose = "public"
@@ -382,10 +383,10 @@ resource "linode_instance" "red5pro_sm" {
       "R5AS_AUTH_SECRET=${random_password.r5as_auth_secret[0].result}",
       "R5AS_AUTH_USER=${var.stream_manager_auth_user}",
       "R5AS_AUTH_PASS=${var.stream_manager_auth_password}",
-      "TF_VAR_linode_api_token: ${var.linode_api_token}",
-      "TF_VAR_linode_root_user_password: ${var.linode_root_user_password}",
-      "TF_VAR_linode_ssh_key_name: ${var.linode_ssh_key_name}",
-      "TF_VAR_r5p_license_key: ${var.red5pro_license_key}",
+      "TF_VAR_linode_api_token=${var.linode_api_token}",
+      "TF_VAR_linode_root_user_password=${var.linode_root_user_password}",
+      "TF_VAR_linode_ssh_key_name=${linode_sshkey.sshkey.label}",
+      "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
       "R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
       "TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}",
@@ -426,14 +427,14 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip != [] ? local.kafka_ip : "default_ip"}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${tolist(linode_instance.red5pro_sm[0].ipv4)[0]}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${linode_instance.red5pro_sm[0].ip_address}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
       "cd /home/red5pro-installer/",
       "sudo chmod +x /home/red5pro-installer/*.sh",
-      "sudo -E /home/red5pro-installer/r5p_install_sm2_oci.sh",
+      "sudo -E /home/red5pro-installer/r5p_install_sm2.sh",
     ]
     connection {
       host        = linode_instance.red5pro_sm[0].ip_address
@@ -451,6 +452,7 @@ resource "linode_instance" "red5pro_node" {
   image           = "linode/ubuntu22.04"
   region          = var.node_image_region
   type            = var.node_image_instance_type
+  authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
   interface {
     purpose = "public"
@@ -463,11 +465,6 @@ resource "linode_instance" "red5pro_node" {
 
   tags       = ["test"]
   private_ip = true
-
-  authorized_keys = [
-    replace(local.ssh_public_key, "\n", "")
-  ]
-
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"

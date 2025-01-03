@@ -166,6 +166,7 @@ install_red5pro_service(){
         
     systemctl daemon-reload
     systemctl enable red5pro.service
+    systemctl start red5pro.service
 }
 
 linux_optimization(){
