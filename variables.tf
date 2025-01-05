@@ -185,21 +185,21 @@ variable "network_security_group_kafka_ingress" {
   }))
   default = [
     {
-      label       = "KafkaSSH_tcp"
-      protocol    = "TCP"
-      action      = "ACCEPT"
-      ports       = "22"
-      ipv4        = ["0.0.0.0/0"]
-      ipv6        = ["::/0"]
+      label    = "tcp"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "22"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
     },
     {
-      label        = "KafkaSSH_tcp"
-      protocol    = "TCP"
-      action      = "ACCEPT"
-      ports       = "9092"
-      ipv4        = ["10.5.0.0/16"]
-      ipv6        = ["::/0"]
-    }
+      label    = "kafka-rule"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "9092"
+      ipv4     = ["10.0.0.0/16"]
+      ipv6     = ["::/0"]
+    }   
   ]
 }
 

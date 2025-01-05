@@ -300,7 +300,7 @@ resource "null_resource" "red5pro_kafka" {
   }
 
   provisioner "remote-exec" {
-    inline = [
+    inline = [     
       "sudo cloud-init status --wait",
       "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /home/red5pro-installer/server.properties",
       "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /home/red5pro-installer/server.properties",
@@ -421,12 +421,11 @@ resource "null_resource" "red5pro_sm" {
   provisioner "remote-exec" {
     inline = [
       "sudo cloud-init status --wait",
-      "sudo mkdir -p /usr/local/stream-manager",
       "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_IP=${local.kafka_ip != [] ? local.kafka_ip : "default_ip"}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TRAEFIK_IP=${linode_instance.red5pro_sm[0].ip_address}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
