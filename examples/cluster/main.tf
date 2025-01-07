@@ -12,8 +12,8 @@ module "red5pro" {
   type                  = "cluster"                               # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-cluster"                       # Name to be used on all the resources as identifier
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
-  linode_api_token      = "<linode token>" 
-  sshkey                = "linode_sshkey"                         # Name of SSHY Key to be created in Linode cloud
+  linode_api_token      = "<linode token>"                        # Linode API token from Linode Cloud  
+  sshkey                = "linode_sshkey"                         # Name of SSH Key to be created in Linode cloud
 
   # SSH key configuration
   ssh_key_use_existing              = false                                              # true - use existing SSH key, false - create new SSH key
@@ -31,7 +31,7 @@ module "red5pro" {
   stream_manager_auth_password        = "example_password"    # Stream Manager 2.0 authentication password
 
   # Kafka standalone instance configuration - (Optional)
-  kafka_standalone_instance_create      = false                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
+  kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
   kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
@@ -85,7 +85,7 @@ module "red5pro" {
   }
 
   # Red5 Pro autoscaling Node group - (Optional)
-  node_group_create                    = false                     # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_create                    = true                      # Linux or Mac OS only. true - create new Node group, false - not create new Node group
   node_group_origins_min               = 1                         # Number of minimum Origins
   node_group_origins_max               = 20                        # Number of maximum Origins
   node_group_origins_instance_type     = "g6-dedicated-2"          # Origins Linode Instance Type

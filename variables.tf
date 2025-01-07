@@ -185,7 +185,7 @@ variable "network_security_group_kafka_ingress" {
   }))
   default = [
     {
-      label    = "tcp"
+      label    = "kafka-ssh"
       action   = "ACCEPT"
       protocol = "TCP"
       ports    = "22"
