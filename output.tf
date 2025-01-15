@@ -49,12 +49,14 @@ output "manual_dns_record" {
 
 output "stream_manager_ip" {
   description = "Stream Manager 2.0 Public IP or Load Balancer Public IP"
-  value       = length(local.stream_manager_ip) > 0 ? local.stream_manager_ip : ""
+  value       = local.cluster_or_autoscale ? local.stream_manager_ip : ""
 }
+
 output "stream_manager_url_http" {
   description = "Stream Manager HTTP URL"
-  value       = length(local.stream_manager_ip) > 0 ? "http://${local.stream_manager_ip}:80" : ""
+  value       = local.cluster_or_autoscale ? "http://${local.stream_manager_ip}:80" : ""
 }
+
 output "stream_manager_url_https" {
   description = "Stream Manager HTTPS URL"
   value       = local.cluster_or_autoscale ? var.https_ssl_certificate != "none" ? "https://${var.https_ssl_certificate_domain_name}:443" : "" : ""

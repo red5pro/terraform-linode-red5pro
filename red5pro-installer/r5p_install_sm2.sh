@@ -145,6 +145,21 @@ config_sm(){
             ls -la "$CURRENT_DIRECTORY/autoscaling-with-ssl/"
             exit 1
         fi
+
+    elif [ "$SM_SSL" == "imported-auto" ]; then
+        log_i "Stream Manager 2.0 with imported-auto SSL"
+
+        mkdir -p "$SM_HOME/certs"
+
+        # Copy docker-compose.yml
+        if [ -f "$CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml" ]; then
+            cp -r "$CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml" "$SM_HOME/"
+        else 
+            log_e "File $CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml not found"
+            ls -la "$CURRENT_DIRECTORY/autoscaling-without-ssl/"
+            exit 1
+        fi
+    
     else 
         log_i "Stream Manager 2.0 without SSL"
 
@@ -177,6 +192,7 @@ start_sm(){
     log_i "Start SM2.0 service"
     systemctl daemon-reload
     systemctl enable sm.service
+    systemctl start sm.service
 
     if [ "$SM_STANDALONE" == "true" ]; then
         log_i "Stream Manager 2.0 standalone mode - start service"

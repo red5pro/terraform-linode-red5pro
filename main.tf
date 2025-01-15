@@ -7,7 +7,7 @@ locals {
   vcn_name                      = linode_vpc.red5vpc.label
   subnet_id                     = linode_vpc_subnet.red5subnet.id
   subnet_name                   = linode_vpc_subnet.red5subnet.label
-  stream_manager_ip             = local.standalone ? linode_instance.standalone_instance[0].ip_address : local.autoscale ? linode_instance.red5pro_sm[0].ip_address : local.cluster ? linode_instance.red5pro_sm[0].ip_address : "null"
+  stream_manager_ip             = local.standalone ? linode_instance.standalone_instance[0].ip_address : local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? linode_instance.red5pro_sm[0].ip_address : "null"
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
   ssh_public_key_path           = var.ssh_key_use_existing ? var.ssh_key_existing_public_key_path : local_file.red5pro_ssh_key_pub[0].filename
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
@@ -507,6 +507,132 @@ resource "linode_instance" "red5pro_node" {
       private_key = local.ssh_private_key
     }
   }
+}
+
+################################################################################
+# Red5 Pro Stream Manager Autoscaling (Linode Node Balancer + Autoscaling)
+################################################################################
+
+resource "linode_nodebalancer" "red5pro_lb" {
+    count     = local.autoscale ? 1 : 0
+    label     = "${var.name}-sm2-lb"
+    region    = var.stream_manager_red5pro_region 
+}
+
+resource "linode_nodebalancer_config" "red5pro_lbconfig_http"{
+    count           = local.autoscale && var.https_ssl_certificate == "none" ? 1 : 0
+    nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
+    port            = 80
+    protocol        = "http"
+    check           = "http"
+    check_path      = "/as/v1/admin/healthz"    
+    algorithm       = "roundrobin"
+}
+
+resource "linode_nodebalancer_config" "red5pro_lbconfig_https"{
+    count           = local.autoscale && var.https_ssl_certificate == "imported-auto" ? 1 : 0
+    nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
+    port            = 443
+    protocol        = "https"
+    check           = "http"
+    check_path      = "/as/v1/admin/healthz"
+    ssl_cert        = file(var.https_ssl_certificate_cert_path)
+    ssl_key         = file(var.https_ssl_certificate_key_path)
+    algorithm       = "roundrobin"
+}
+
+resource "linode_image" "red5pro_sm_image" {
+  count       = local.autoscale ? 1 : 0
+  label       = "${var.name}-sm-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
+  linode_id   = linode_instance.red5pro_sm[0].id
+  disk_id     = linode_instance.red5pro_sm[0].disk[0].id
+  depends_on  = [linode_instance.red5pro_sm]
+  lifecycle {
+    ignore_changes = [label]
+  }
+}
+
+resource "linode_instance" "red5pro_sm_auto" {
+  count           = local.autoscale ? var.stream_manager_count : 0
+  label           = "stream-manager-${count.index + 1}"
+  image           = linode_image.red5pro_sm_image[0].id
+  region          = var.stream_manager_red5pro_region
+  type            = var.stream_manager_instance_type
+  authorized_keys = [replace(local.ssh_public_key, "\n", "")]
+
+  interface {
+    purpose = "public"
+  }
+
+  interface {
+    purpose   = "vpc"
+    subnet_id = local.subnet_id
+  }
+
+  tags       = ["test"]
+  private_ip = true
+}
+
+resource "null_resource" "red5pro_sm_auto" {
+  count = local.autoscale ? var.stream_manager_count : 0
+
+  provisioner "file" {
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/home"
+
+    connection {
+      host        = linode_instance.red5pro_sm_auto[count.index].ip_address
+      type        = "ssh"
+      user        = "root"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo cloud-init status --wait",
+      "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${linode_instance.red5pro_sm_auto[count.index].ip_address}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
+      "export SM_SSL='${local.stream_manager_ssl}'",
+      "export SM_STANDALONE='${local.stream_manager_standalone}'",
+      "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
+      "cd /home/red5pro-installer/",
+      "sudo chmod +x /home/red5pro-installer/*.sh",
+      "sudo -E /home/red5pro-installer/r5p_install_sm2.sh",
+    ]
+    connection {
+      host        = linode_instance.red5pro_sm_auto[count.index].ip_address
+      type        = "ssh"
+      user        = "root"
+      private_key = local.ssh_private_key
+    }
+  }
+  depends_on = [linode_instance.red5pro_sm_auto]
+}
+
+resource "linode_nodebalancer_node" "red5pro_sm_backend-nodes-http" {
+  count           = local.autoscale && var.stream_manager_count > 0 && var.https_ssl_certificate == "none" ? var.stream_manager_count : 0
+  label           = "backend-node-${count.index + 1}"
+  nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
+  config_id       = linode_nodebalancer_config.red5pro_lbconfig_http[0].id
+  address         = "${element(linode_instance.red5pro_sm_auto[*].private_ip_address, count.index)}:80"
+  mode            = "accept"
+  depends_on      = [linode_instance.red5pro_sm_auto]
+}
+
+resource "linode_nodebalancer_node" "red5pro_sm_backend-nodes-https" {
+  count           = local.autoscale && var.stream_manager_count > 0 && var.https_ssl_certificate == "imported-auto" ? var.stream_manager_count : 0
+  label           = "backend-node-${count.index + 1}"
+  nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
+  config_id       = linode_nodebalancer_config.red5pro_lbconfig_https[0].id
+  address         = "${element(linode_instance.red5pro_sm_auto[*].private_ip_address, count.index)}:80"
+  mode            = "accept"
+  depends_on      = [linode_instance.red5pro_sm_auto]
 }
 
 ####################################################################################################

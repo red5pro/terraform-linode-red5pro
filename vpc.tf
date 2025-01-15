@@ -90,13 +90,36 @@ resource "linode_firewall" "kafka_firewall" {
       label      = inbound.value.label
       action     = inbound.value.action  
       protocol   = inbound.value.protocol
-      ports      = inbound.value.ports  # Directly use the ports from the variable (assuming port_min and port_max are not needed)
-      ipv4       = inbound.value.ipv4   # Use the ipv4 CIDR blocks directly from the variable
-      ipv6       = inbound.value.ipv6   # Use the ipv6 CIDR blocks directly from the variable
+      ports      = inbound.value.ports 
+      ipv4       = inbound.value.ipv4  
+      ipv6       = inbound.value.ipv6  
     }
   }
 
   inbound_policy  = "ACCEPT"
   outbound_policy = "ACCEPT"
   linodes         = concat(linode_instance.red5pro_kafka[*].id)
+}
+
+# Node Balancer Firewall
+resource "linode_firewall" "nodebalancer_firewall" {
+  count = local.autoscale ? 1 : 0
+  label = var.node_ingress_label
+
+  # Define the inbound firewall rules for Kafka instances
+  dynamic "inbound" {
+    for_each = var.node_ingress
+    content {
+      label      = inbound.value.label
+      action     = inbound.value.action  
+      protocol   = inbound.value.protocol
+      ports      = inbound.value.ports
+      ipv4       = inbound.value.ipv4
+      ipv6       = inbound.value.ipv6 
+    }
+  }
+
+  inbound_policy  = "ACCEPT"
+  outbound_policy = "ACCEPT"
+  nodebalancers   = concat(linode_nodebalancer.red5pro_lb[*].id)
 }

@@ -27,7 +27,7 @@ variable "subnet_label" {
 variable "subnet_ipv4" {
   description = "The IPv4 CIDR block for the subnet"
   type        = string
-  default     = "10.0.0.0/24"
+  default     = "10.0.0.0/16"
 }
 
 # Firewall Configuration for Stream Manager - Standalone
@@ -203,6 +203,44 @@ variable "network_security_group_kafka_ingress" {
   ]
 }
 
+variable "node_ingress" {
+  description = "List of ports for security group ingress rules for Kafka standalone instance"
+  type = list(object({
+    label    = string
+    action   = string
+    protocol = string
+    ports    = string
+    ipv4     = list(string)
+    ipv6     = list(string)
+  }))
+  default = [
+    {
+      label    = "allow-http"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "80"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "allow-https"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "443"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "kafka-rule"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "9092"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    }
+  ]
+}
+
 # Linode Instances for Firewalls
 variable "sm_firewall_linodes" {
   description = "List of linode instances to attach to the stream manager firewall"
@@ -219,6 +257,11 @@ variable "node_firewall_linodes" {
 variable "kafka_firewall_label"{
   type        = string
   default     = "kafka-firewall"
+}
+
+variable "node_ingress_label"{
+  type        = string
+  default     = "nodebalancer-firewall"
 }
 
 # Red5 Pro common configurations
@@ -382,8 +425,8 @@ variable "https_ssl_certificate" {
   type        = string
   default     = "none"
   validation {
-    condition     = var.https_ssl_certificate == "none" || var.https_ssl_certificate == "letsencrypt" || var.https_ssl_certificate == "imported"
-    error_message = "The https_ssl_certificate value must be a valid! Example: none, letsencrypt, imported"
+    condition     = var.https_ssl_certificate == "none" || var.https_ssl_certificate == "letsencrypt" || var.https_ssl_certificate == "imported" || var.https_ssl_certificate == "imported-auto"
+    error_message = "The https_ssl_certificate value must be a valid! Example: none, letsencrypt, imported, imported-auto"
   }
 }
 variable "https_ssl_certificate_domain_name" {
@@ -579,6 +622,13 @@ variable "node_config_restreamer" {
     restreamer_whip      = false
     restreamer_srtingest = false
   }
+}
+
+# Red5 Pro autoscale SM
+variable "stream_manager_count" {
+  description = "SM instance count for autoscale"
+  type        = number
+  default     = 1
 }
 
 # Red5 Pro autoscaling Node group - (Optional) 
