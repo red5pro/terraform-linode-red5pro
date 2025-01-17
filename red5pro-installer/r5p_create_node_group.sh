@@ -447,7 +447,7 @@ check_node_group() {
 
     NODES_URL="$SM_URL/as/v1/admin/nodegroup/status/$nodegroup_config_name"
     
-    for i in {1..20}; do
+    for i in {1..30}; do
         curl --insecure -s --request GET "$NODES_URL" --header "Authorization: Bearer ${JVT_TOKEN}" | jq -r '.[] | [.scalingEvent.nodeId, .nodeEvent.publicIp // "null", .nodeEvent.privateIp // "null", .nodeEvent.nodeRoleName // "null", .scalingEvent.state, .scalingEvent.test // "null"] | join(" ")' > temp.txt
 
         node_bad_state=0
@@ -480,7 +480,7 @@ check_node_group() {
             break
         fi
 
-        if [[ $i -eq 10 ]]; then
+        if [[ $i -eq 20 ]]; then
             log_e "Something wrong with nodes states. (SM2.0 was not able to create nodes or nodes can't connect to SM). EXIT..."
             exit 1
         fi

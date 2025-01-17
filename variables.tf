@@ -328,24 +328,27 @@ variable "linode_api_token" {
     default = ""
 }
 
-variable "sshkey" {
-  type    = string
-  default = ""
-}
-
 # SSH key configuration
 variable "ssh_key_use_existing" {
   description = "SSH key pair configuration, true = use existing, false = create new"
   type        = bool
   default     = false
 }
+
 variable "ssh_key_existing_private_key_path" {
   description = "SSH private key path existing"
   type        = string
   default     = ""
 }
+
 variable "ssh_key_existing_public_key_path" {
   description = "SSH public key path existing"
+  type        = string
+  default     = ""
+}
+
+variable "ssh_key_name_existing" {
+  description = "SSH key name existing in cloud"
   type        = string
   default     = ""
 }

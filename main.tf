@@ -11,7 +11,8 @@ locals {
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
   ssh_public_key_path           = var.ssh_key_use_existing ? var.ssh_key_existing_public_key_path : local_file.red5pro_ssh_key_pub[0].filename
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
-  ssh_public_key                = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : tls_private_key.red5pro_ssh_key[0].public_key_openssh
+  ssh_public_key                = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].ssh_key : linode_sshkey.node_ssh_key[0].ssh_key
+  ssh_key_name                  = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].label : linode_sshkey.node_ssh_key[0].label
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
   kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? linode_instance.red5pro_kafka[0].interface[1].ipv4[0].vpc : linode_instance.red5pro_sm[0].interface[1].ipv4[0].vpc : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
@@ -47,6 +48,16 @@ resource "local_file" "red5pro_ssh_key_pub" {
   content  = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
+resource "linode_sshkey" "node_ssh_key" {
+  count    = var.ssh_key_use_existing ? 0 : 1
+  label    = "ssh-key-${var.name}"
+  ssh_key  = replace(tls_private_key.red5pro_ssh_key[0].public_key_openssh, "\n", "")
+}
+
+data "linode_sshkey" "node_ssh_key" {
+  count    = var.ssh_key_use_existing ? 1 : 0
+  label    = var.ssh_key_name_existing
+}
 
 ################################################################################
 # Red5 Pro Standalone Server (Linode Instance)
@@ -61,7 +72,7 @@ resource "random_password" "ssl_password_red5pro_standalone" {
 resource "linode_instance" "standalone_instance" {
     count           = local.standalone ? 1 : 0
     label           = "${var.name}-standalone-server"
-    image           = "linode/ubuntu22.04"
+    image           = "linode/ubuntu${var.ubuntu_version}"
     region          = var.standalone_red5pro_region
     type            = var.standalone_red5pro_instance_type
     authorized_keys = [replace(local.ssh_public_key, "\n", "")]
@@ -266,7 +277,7 @@ resource "tls_locally_signed_cert" "kafka_server_cert" {
 resource "linode_instance" "red5pro_kafka" {
   count           = local.kafka_standalone_instance ? 1 : 0
   label           = "${var.name}-kafka"
-  image           = "linode/ubuntu22.04"
+  image           = "linode/ubuntu${var.ubuntu_version}"
   region          = var.kafka_red5pro_region
   type            = var.kafka_instance_type
   authorized_keys = [replace(local.ssh_public_key, "\n", "")]
@@ -327,14 +338,6 @@ resource "null_resource" "red5pro_kafka" {
 }
 
 ################################################################################
-# LINODE SSH KEY (FROM LINODE CLOUD)
-################################################################################
-resource "linode_sshkey" "sshkey" {
-  label = var.sshkey
-  ssh_key = replace(local.ssh_public_key, "\n", "")
-}
-
-################################################################################
 # Red5 Pro Stream Manager 2.0 - (Linode Instance)
 ################################################################################
 
@@ -348,7 +351,7 @@ resource "random_password" "r5as_auth_secret" {
 resource "linode_instance" "red5pro_sm" {
   count           = local.cluster_or_autoscale ? 1 : 0
   label           = local.autoscale ? "${var.name}-sm2-image" : "${var.name}-sm2"
-  image           = "linode/ubuntu22.04"
+  image           = "linode/ubuntu${var.ubuntu_version}"
   region          = var.stream_manager_red5pro_region
   type            = var.stream_manager_instance_type
   authorized_keys = [replace(local.ssh_public_key, "\n", "")]
@@ -385,7 +388,7 @@ resource "linode_instance" "red5pro_sm" {
       "R5AS_AUTH_PASS=${var.stream_manager_auth_password}",
       "TF_VAR_linode_api_token=${var.linode_api_token}",
       "TF_VAR_linode_root_user_password=${var.linode_root_user_password}",
-      "TF_VAR_linode_ssh_key_name=${linode_sshkey.sshkey.label}",
+      "TF_VAR_linode_ssh_key_name=${local.ssh_key_name}",
       "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
       "R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
@@ -442,13 +445,13 @@ resource "null_resource" "red5pro_sm" {
       private_key = local.ssh_private_key
     }
   }
-  depends_on = [tls_cert_request.kafka_server_csr, null_resource.red5pro_kafka]
+  depends_on = [tls_cert_request.kafka_server_csr, null_resource.red5pro_kafka, linode_instance.red5pro_sm]
 }
 
 resource "linode_instance" "red5pro_node" {
   count           = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
   label           = "${var.name}-node-image"
-  image           = "linode/ubuntu22.04"
+  image           = "linode/ubuntu${var.ubuntu_version}"
   region          = var.node_image_region
   type            = var.node_image_instance_type
   authorized_keys = [replace(local.ssh_public_key, "\n", "")]
@@ -541,6 +544,10 @@ resource "linode_nodebalancer_config" "red5pro_lbconfig_https"{
     algorithm       = "roundrobin"
 }
 
+####################################################################################################
+# Red5 Pro Autoscaling Stream Manager 2.0 (Linode Custom Images)
+####################################################################################################
+
 resource "linode_image" "red5pro_sm_image" {
   count       = local.autoscale ? 1 : 0
   label       = "${var.name}-sm-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
@@ -614,6 +621,10 @@ resource "null_resource" "red5pro_sm_auto" {
   }
   depends_on = [linode_instance.red5pro_sm_auto]
 }
+
+####################################################################################################
+# Red5 Pro Autoscaling Node Balacer 
+####################################################################################################
 
 resource "linode_nodebalancer_node" "red5pro_sm_backend-nodes-http" {
   count           = local.autoscale && var.stream_manager_count > 0 && var.https_ssl_certificate == "none" ? var.stream_manager_count : 0
