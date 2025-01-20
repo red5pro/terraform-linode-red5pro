@@ -5,8 +5,8 @@ variable "vpc_label" {
   default     = "red5-vpc"
 }
 
-variable "vpc_region" {
-  description = "The region for the VPC"
+variable "linode_region" {
+  description = "The region for the deployment"
   type        = string
   default     = "us-lax"
 }
@@ -241,25 +241,12 @@ variable "node_ingress" {
   ]
 }
 
-# Linode Instances for Firewalls
-variable "sm_firewall_linodes" {
-  description = "List of linode instances to attach to the stream manager firewall"
-  type        = list(string)
-  default     = []
-}
-
-variable "node_firewall_linodes" {
-  description = "List of linode instances to attach to the node firewall"
-  type        = list(string)
-  default     = []
-}
-
 variable "kafka_firewall_label"{
   type        = string
   default     = "kafka-firewall"
 }
 
-variable "node_ingress_label"{
+variable "node_balancer_label"{
   type        = string
   default     = "nodebalancer-firewall"
 }
@@ -325,7 +312,11 @@ variable "ubuntu_version" {
 
 variable "linode_api_token" {
     type    = string
-    default = ""
+    default = "" 
+    validation {
+        condition     = var.linode_api_token != ""
+        error_message = "The Linode API token cannot be empty. Please provide a valid token."   
+    }
 }
 
 # SSH key configuration
@@ -360,11 +351,6 @@ variable "standalone_red5pro_instance_type" {
   description = "Red5 Pro Standalone server instance type"
   type        = string
   default     = "g6-dedicated-4"
-}
-variable "standalone_red5pro_region" {
-  description = "Red5 Pro Standalone server instance type"
-  type        = string
-  default     = "us-lax"
 }
 variable "standalone_red5pro_inspector_enable" {
   description = "Red5 Pro Standalone server Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
@@ -459,13 +445,6 @@ variable "stream_manager_instance_type" {
   type        = string
   default     = "g6-dedicated-4"
 }
-
-variable "stream_manager_red5pro_region" {
-  description = "Red5 Pro Stream Manager 2.0 instance type"
-  type        = string
-  default     = "us-lax"
-}
-
 variable "stream_manager_auth_user" {
   description = "value to set the user name for Stream Manager 2.0 authentication"
   type        = string
@@ -502,30 +481,11 @@ variable "kafka_standalone_instance_type" {
   type        = string
   default     = "g6-dedicated-4"
 }
-
 variable "kafka_standalone_instance_arhive_url" {
   description = "Kafka standalone instance - archive URL"
   type        = string
   default     = "https://downloads.apache.org/kafka/3.8.0/kafka_2.13-3.8.0.tgz"
 }
-
-variable "load_balancer_reserved_ip_use_existing" {
-  description = "Use existing Reserved IP for Load Balancer. true = use existing, false = create new"
-  type        = bool
-  default     = false
-}
-variable "load_balancer_reserved_ip_existing" {
-  description = "Existing Reserved IP for Load Balancer"
-  type        = string
-  default     = ""
-}
-
-variable "kafka_red5pro_region" {
-  description = "Region for Kafka Instance"
-  type        = string
-  default     = "us-lax"
-}
-
 variable "kafka_instance_type" {
   description = "Region for Kafka Instance"
   type        = string
@@ -536,13 +496,11 @@ variable "linode_root_user_password" {
   type        = string
   default     = "red5pro@1234567899"
 }
-
 variable "R5AS_CLOUD_PLATFORM_TYPE" {
   description = "The cloud platform type"
   type        = string
   default     = "LINODE"
 }
-
 # Red5 Pro Node image configuration
 variable "node_image_create" {
   description = "Create new Node image true/false."
@@ -553,11 +511,6 @@ variable "node_image_instance_type" {
   description = "Node image - instance type"
   type        = string
   default     = "g6-dedicated-2"
-}
-variable "node_image_region" {
-  description = "Node region"
-  type        = string
-  default     = "us-lax"
 }
 
 # Extra configuration for Red5 Pro autoscaling nodes

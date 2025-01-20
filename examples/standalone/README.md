@@ -18,10 +18,6 @@ In the following example, Terraform module will automates the infrastructure pro
 ## Example main.tf (standalone)
 
 ```hcl
-provider "linode" {
-  token = var.linode_api_token
-}
-
 module "red5pro" {
   source = "../../test-new" 
   type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale

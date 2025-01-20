@@ -1,19 +1,6 @@
-# Output for the VPC ID
-output "vpc_id" {
-  description = "The ID of the VPC"
-  value       = linode_vpc.red5vpc.id
-}
-
 output "vpc_name" {
   description = "The ID of the VPC"
   value       = linode_vpc.red5vpc.label
-}
-
-
-# Output for the Subnet ID
-output "subnet_id" {
-  description = "The ID of the VPC subnet"
-  value       = linode_vpc_subnet.red5subnet.id
 }
 
 output "subnet_name" {
@@ -34,7 +21,6 @@ output "standalone_red5pro_server_ip" {
 output "standalone_red5pro_server_http_url" {
   description = "Standalone Red5 Pro Server HTTP URL"
   value       = local.standalone ? "http://${linode_instance.standalone_instance[0].ip_address}:5080" : ""
-
 }
 
 output "standalone_red5pro_server_https_url" {

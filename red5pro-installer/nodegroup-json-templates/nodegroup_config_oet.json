@@ -2,25 +2,26 @@
     "name": "nodegroup-oet",
     "description": "Stream Manager 2.0 OCI Node group with Origin, Edge and Transcoder",
     "cloudProperties": "environment=NODE_ENVIRONMENT;subnet=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME",
-    "cloudPlatform": "OCI",
+    "cloudPlatform": "LINODE",
     "isScalingPaused": false,
     "images": {
         "base_image": {
             "name": "base_image",
-            "image": "NODE_IMAGE_NAME",
-            "cloudProperties": "instance_type=ORIGIN_INSTANCE_TYPE"
+            "image": "NODE_IMAGE_NAME"
         }
     },
     "roles": {
         "origin": {
             "name": "origin",
             "imageName": "base_image",
+            "cloudProperties" : "instance_type=ORIGIN_INSTANCE_TYPE;volume_size=ORIGIN_VOLUME_SIZE",
             "capabilities": ["PUBLISH"],
             "propertyOverrides": []
         },
         "edge": {
             "name": "edge",
             "imageName": "base_image",
+            "cloudProperties" : "instance_type=ORIGIN_INSTANCE_TYPE;volume_size=EDGE_VOLUME_SIZE",
             "parentRoleName": "origin",
             "parentCardinality": "GLOBAL",
             "capabilities": ["SUBSCRIBE"],
@@ -29,6 +30,7 @@
         "transcoder": {
             "name": "transcoder",
             "imageName": "base_image",
+            "cloudProperties" : "instance_type=ORIGIN_INSTANCE_TYPE;volume_size=TRANSCODER_VOLUME_SIZE",
             "capabilities": ["TRANSCODE"],
             "propertyOverrides": []
         }

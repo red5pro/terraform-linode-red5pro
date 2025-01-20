@@ -1,19 +1,40 @@
-######################################################################################################################
-# Example: Red5 Pro Stream Manager 2.0 Autoscale Deployment (Load Balancer with multiple Stream Manager 2.0 instances)
-######################################################################################################################
+# Stream Manager 2.0 cluster with autoscaling nodes (cluster)
 
+In the following example, Terraform module will automates the infrastructure provisioning of the Stream Manager 2.0 cluster with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
+
+## Terraform Deployed Resources (cluster)
+
+- VPC
+- Public subnet
+- Firewall
+- Firewall for Stream Manager 2.0
+- Firewall for Kafka Instance
+- Firewall for Red5 Pro (SM2.0) Autoscaling nodes
+- SSH key pair (use existing or create a new one)
+- Standalone Kafka instance (optional)
+- Stream Manager 2.0 instance. Optionally include a Kafka server on the same instance.
+- SSL certificate for Stream Manager 2.0 instance. Options:
+  - `none` - Stream Manager 2.0 without HTTPS and SSL certificate. Only HTTP on port `80`
+  - `letsencrypt` - Stream Manager 2.0 with HTTPS and SSL certificate obtained by Let's Encrypt. HTTP on port `80`, HTTPS on port `443`
+  - `imported` - Stream Manager 2.0 with HTTPS and imported SSL certificate. HTTP on port `80`, HTTPS on port `443`
+- Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
+- Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
+
+## Example main.tf (cluster)
+
+```hcl
 module "red5pro" {
   source                = "../../"
-  type                  = "autoscale"                                         # Deployment type: standalone, cluster, autoscale
-  name                  = "red5pro-auto"                                      # Name to be used on all the resources as identifier
-  ubuntu_version        = "22.04"                                             # Ubuntu version for Red5 Pro servers  
-  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip"             # Absolute path or relative path to Red5 Pro server ZIP file
-  linode_api_token      = "<linode token>"                                    # Linode API token from Linode Cloud  
+  type                  = "cluster"                               # Deployment type: standalone, cluster, autoscale
+  name                  = "red5pro-cluster"                       # Name to be used on all the resources as identifier
+  ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers  
+  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
+  linode_api_token      = "<linode token>"                        # Linode API token from Linode Cloud  
 
   # SSH key configuration
-  ssh_key_use_existing               = false                                              # true - use existing SSH key, false - create new SSH key
-  ssh_key_name_existing              = "example-key"                                      # SSH key name existing in LINODE
-  ssh_key_existing_private_key_path  = "PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"  # Path to existing SSH private key
+  ssh_key_use_existing               = false                                                # true - use existing SSH key, false - create new SSH key
+  ssh_key_name_existing              = "example-key"                                        # SSH key name existing in LINODE
+  ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"    # Path to existing SSH private key
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
@@ -21,20 +42,24 @@ module "red5pro" {
   red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Stream Manager 2.0 instance configuration
-  stream_manager_instance_type                  = "g6-dedicated-4"      # Linode Instance type for Stream Manager
-  stream_manager_auth_user                      = "example_user"        # Stream Manager 2.0 authentication user name
-  stream_manager_auth_password                  = "example_password"    # Stream Manager 2.0 authentication passwordssword
-  stream_manager_count                          = 1                     # Stream Manager 2.0 instance count
+  stream_manager_instance_type        = "g6-dedicated-4"      # Linode Instance type for Stream Manager
+  stream_manager_auth_user            = "example_user"        # Stream Manager 2.0 authentication user name
+  stream_manager_auth_password        = "example_password"    # Stream Manager 2.0 authentication password
 
-  # Kafka standalone instance configuration
+  # Kafka standalone instance configuration - (Optional)
   kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
   kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
 
-  # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
-  https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported-auto - import existing HTTPS/SSL certificate
+  # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
+  https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
+
+  # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
+  # https_ssl_certificate             = "letsencrypt"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"
+  # https_ssl_certificate_email       = "email@example.com"
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
-  # https_ssl_certificate             = "imported-auto"
+  # https_ssl_certificate             = "imported"
   # https_ssl_certificate_domain_name = "red5pro.example.com"
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
@@ -42,7 +67,7 @@ module "red5pro" {
   # Red5 Pro autoscaling Node image configuration
   node_image_create             = true                  # Default: true for Autoscaling and Cluster, true - create new Red5 Pro Node image, false - do not create new Red5 Pro Node image
   node_image_instance_type      = "g6-dedicated-4"      # Instance type for Red5 Pro Node image
-
+  
   # Extra configuration for Red5 Pro autoscaling nodes
   # Webhooks configuration - (Optional) https://www.red5.net/docs/special/webhooks/overview/
   node_config_webhooks = {
@@ -98,3 +123,4 @@ module "red5pro" {
 output "module_output" {
   value = module.red5pro
 }
+```

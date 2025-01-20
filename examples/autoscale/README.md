@@ -1,7 +1,31 @@
-######################################################################################################################
-# Example: Red5 Pro Stream Manager 2.0 Autoscale Deployment (Load Balancer with multiple Stream Manager 2.0 instances)
-######################################################################################################################
 
+# Autoscaling Stream Managers 2.0 with autoscaling nodes (autoscale) - [Example](https://github.com/red5pro/terraform-oci-red5pro/tree/master/examples/autoscale)
+
+In the following example, Terraform module will automates the infrastructure provisioning of the Autoscale Stream Managers 2.0 with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
+
+## Terraform Deployed Resources (autoscale)
+
+- VPC
+- Public subnet
+- Firewall
+- Firewall for Stream Manager 2.0
+- Firewall for Kafka Instance
+- Firewall for Red5 Pro (SM2.0) Autoscaling nodes
+- SSH key pair (use existing or create a new one)
+- Standalone Kafka instance
+- Stream Manager 2.0 instance image
+- Stream Manager 2.0 instance based on node count
+- Node Balancer Configuration
+- Attaching Node Balancer for Stream Manager 2.0 instances
+- SSL certificate for Noad Balancer. Options:
+  - `none` - Load Balancer without HTTPS and SSL certificate. Only HTTP on port `80`
+  - `imported-auto` - Load Balancer with HTTPS and imported SSL certificate. HTTP on port `80`, HTTPS on port `443`
+- Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
+- Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
+
+## Example main.tf (autoscale)
+
+```hcl
 module "red5pro" {
   source                = "../../"
   type                  = "autoscale"                                         # Deployment type: standalone, cluster, autoscale
@@ -24,7 +48,7 @@ module "red5pro" {
   stream_manager_instance_type                  = "g6-dedicated-4"      # Linode Instance type for Stream Manager
   stream_manager_auth_user                      = "example_user"        # Stream Manager 2.0 authentication user name
   stream_manager_auth_password                  = "example_password"    # Stream Manager 2.0 authentication passwordssword
-  stream_manager_count                          = 1                     # Stream Manager 2.0 instance count
+  stream_manager_count                          = 1
 
   # Kafka standalone instance configuration
   kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
@@ -98,3 +122,4 @@ module "red5pro" {
 output "module_output" {
   value = module.red5pro
 }
+```

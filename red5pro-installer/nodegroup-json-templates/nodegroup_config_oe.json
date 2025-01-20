@@ -1,20 +1,20 @@
 {
     "name": "nodegroup-oe",
-    "description": "This is an LINODE nodegroup example",
-    "cloudProperties": "environment=NODE_ENVIRONMENT;vpc=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME;volume_size=16",
+    "description": "Stream Manager 2.0 LINODE Node group with Origin and Edge",
+    "cloudProperties": "environment=NODE_ENVIRONMENT;vpc=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME",
     "cloudPlatform": "LINODE",
     "isScalingPaused": false,
     "images": {
         "base_image": {
             "name": "base_image",
-            "image": "NODE_IMAGE_NAME",
-            "cloudProperties": "instance_type=ORIGIN_INSTANCE_TYPE"
+            "image": "NODE_IMAGE_NAME"
         }
     },
     "roles": {
         "origin": {
             "name": "origin",
             "imageName": "base_image",
+            "cloudProperties" : "instance_type=ORIGIN_INSTANCE_TYPE;volume_size=ORIGIN_VOLUME_SIZE",
             "capabilities": [
                 "PUBLISH"
             ]
@@ -22,6 +22,7 @@
         "edge": {
             "name": "edge",
             "imageName": "base_image",
+            "cloudProperties" : "instance_type=EDGE_INSTANCE_TYPE;volume_size=EDGE_VOLUME_SIZE",
             "capabilities": [
                 "SUBSCRIBE"
             ],

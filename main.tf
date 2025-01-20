@@ -73,7 +73,7 @@ resource "linode_instance" "standalone_instance" {
     count           = local.standalone ? 1 : 0
     label           = "${var.name}-standalone-server"
     image           = "linode/ubuntu${var.ubuntu_version}"
-    region          = var.standalone_red5pro_region
+    region          = var.linode_region
     type            = var.standalone_red5pro_instance_type
     authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
@@ -278,7 +278,7 @@ resource "linode_instance" "red5pro_kafka" {
   count           = local.kafka_standalone_instance ? 1 : 0
   label           = "${var.name}-kafka"
   image           = "linode/ubuntu${var.ubuntu_version}"
-  region          = var.kafka_red5pro_region
+  region          = var.linode_region
   type            = var.kafka_instance_type
   authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
@@ -352,7 +352,7 @@ resource "linode_instance" "red5pro_sm" {
   count           = local.cluster_or_autoscale ? 1 : 0
   label           = local.autoscale ? "${var.name}-sm2-image" : "${var.name}-sm2"
   image           = "linode/ubuntu${var.ubuntu_version}"
-  region          = var.stream_manager_red5pro_region
+  region          = var.linode_region
   type            = var.stream_manager_instance_type
   authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
@@ -452,7 +452,7 @@ resource "linode_instance" "red5pro_node" {
   count           = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
   label           = "${var.name}-node-image"
   image           = "linode/ubuntu${var.ubuntu_version}"
-  region          = var.node_image_region
+  region          = var.linode_region
   type            = var.node_image_instance_type
   authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
@@ -519,7 +519,7 @@ resource "linode_instance" "red5pro_node" {
 resource "linode_nodebalancer" "red5pro_lb" {
     count     = local.autoscale ? 1 : 0
     label     = "${var.name}-sm2-lb"
-    region    = var.stream_manager_red5pro_region 
+    region    = var.linode_region
 }
 
 resource "linode_nodebalancer_config" "red5pro_lbconfig_http"{
@@ -563,7 +563,7 @@ resource "linode_instance" "red5pro_sm_auto" {
   count           = local.autoscale ? var.stream_manager_count : 0
   label           = "stream-manager-${count.index + 1}"
   image           = linode_image.red5pro_sm_image[0].id
-  region          = var.stream_manager_red5pro_region
+  region          = var.linode_region
   type            = var.stream_manager_instance_type
   authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
@@ -691,7 +691,7 @@ resource "null_resource" "node_group" {
       SM_URL                                   = "${local.stream_manager_url}"
       R5AS_AUTH_USER                           = "${var.stream_manager_auth_user}"
       R5AS_AUTH_PASS                           = "${var.stream_manager_auth_password}"
-      NODE_GROUP_REGION                        = "${var.node_image_region}"
+      NODE_GROUP_REGION                        = "${var.linode_region}"
       NODE_ENVIRONMENT                         = "${var.name}"
       NODE_SUBNET_NAME                         = "${var.vpc_label}" 
       NODE_SECURITY_GROUP_NAME                 = "${var.node_firewall_label}"

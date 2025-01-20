@@ -1,7 +1,7 @@
 # VPC Creation
 resource "linode_vpc" "red5vpc" {
   label         = var.vpc_label
-  region        = var.vpc_region
+  region        = var.linode_region
   description   = var.vpc_description
 }
 
@@ -104,7 +104,7 @@ resource "linode_firewall" "kafka_firewall" {
 # Node Balancer Firewall
 resource "linode_firewall" "nodebalancer_firewall" {
   count = local.autoscale ? 1 : 0
-  label = var.node_ingress_label
+  label = var.node_balancer_label
 
   # Define the inbound firewall rules for Kafka instances
   dynamic "inbound" {

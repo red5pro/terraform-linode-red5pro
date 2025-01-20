@@ -2,10 +2,6 @@
 # Example: Red5 Pro Stream Manager 2.0 Cluster Deployment
 ##############################################################################
 
-provider "linode" {
-  token = var.linode_api_token
-}
-
 module "red5pro" {
   source                = "../../"
   type                  = "cluster"                               # Deployment type: standalone, cluster, autoscale
@@ -17,7 +13,7 @@ module "red5pro" {
   # SSH key configuration
   ssh_key_use_existing               = false                                                # true - use existing SSH key, false - create new SSH key
   ssh_key_name_existing              = "example-key"                                        # SSH key name existing in LINODE
-  ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"    # Path to existing SSH private key
+  ssh_key_existing_private_key_path  = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"   # Path to existing SSH private key
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
