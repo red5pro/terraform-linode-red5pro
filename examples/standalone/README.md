@@ -18,6 +18,20 @@ In the following example, Terraform module will automates the infrastructure pro
 ## Example main.tf (standalone)
 
 ```hcl
+terraform {
+  required_version = ">= 1.7.5"
+  
+  required_providers {
+    linode = {
+      source  = "linode/linode"
+      version = ">= 2.0"  # You can adjust the version based on the latest
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+  }
+}
+
 module "red5pro" {
   source = "../../test-new" 
   type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale
