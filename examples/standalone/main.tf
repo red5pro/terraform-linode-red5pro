@@ -16,13 +16,17 @@ terraform {
   }
 }
 
+provider "linode" {
+  token = "<linode token>"
+}
+
 module "red5pro" {
   source = "../../" 
   type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-standalone"                    # Name to be used on all the resources as identifier
+  linode_region         = "us-lax"                                # Deployment region
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
-  linode_api_token      = "<linode token>"                        # Linode API token from Linode Cloud  
 
   # SSH key configuration
   ssh_key_use_existing               = false                                                   # true - use existing SSH key, false - create new SSH key

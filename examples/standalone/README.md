@@ -32,15 +32,22 @@ terraform {
   }
 }
 
+provider "linode" {
+  token = "<linode token>"
+}
+
 module "red5pro" {
-  source = "../../test-new" 
+  source = "../../" 
   type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-standalone"                    # Name to be used on all the resources as identifier
+  linode_region         = "us-lax"                                # Deployment region
+  ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
-  
-  ssh_key_use_existing               = false                                                    # true - use existing SSH key, false - create new SSH key
-  #ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"      # Path to existing SSH private key
-  #ssh_key_existing_public_key_path  = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pub"      # Path to existing SSH Public key
+
+  # SSH key configuration
+  ssh_key_use_existing               = false                                                   # true - use existing SSH key, false - create new SSH key
+  ssh_key_name_existing              = "example-key"                                           # SSH key name existing in LINODE
+  ssh_key_existing_private_key_path  = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"      # Path to existing SSH private key
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
