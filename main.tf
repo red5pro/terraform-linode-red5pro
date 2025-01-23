@@ -8,6 +8,7 @@ locals {
   subnet_id                     = linode_vpc_subnet.red5subnet.id
   subnet_name                   = linode_vpc_subnet.red5subnet.label
   stream_manager_ip             = local.standalone ? linode_instance.standalone_instance[0].ip_address : local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? linode_instance.red5pro_sm[0].ip_address : "null"
+  stream_manager_count          = local.autoscale ? var.stream_manager_count : local.cluster ? 1 : 0
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
   ssh_public_key_path           = var.ssh_key_use_existing ? var.ssh_key_existing_public_key_path : local_file.red5pro_ssh_key_pub[0].filename
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
@@ -349,8 +350,8 @@ resource "random_password" "r5as_auth_secret" {
 }
 
 resource "linode_instance" "red5pro_sm" {
-  count           = local.cluster_or_autoscale ? 1 : 0
-  label           = local.autoscale ? "${var.name}-sm2-image" : "${var.name}-sm2"
+  count           = local.stream_manager_count
+  label           = local.stream_manager_count == 1 ? "${var.name}-sm2" : "${var.name}-sm2-${count.index+1}"
   image           = "linode/ubuntu${var.ubuntu_version}"
   region          = var.linode_region
   type            = var.stream_manager_instance_type
@@ -398,7 +399,7 @@ resource "linode_instance" "red5pro_sm" {
       "EOM"
     ]
     connection {
-      host        = linode_instance.red5pro_sm[0].ip_address
+      host        = self.ip_address
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -407,14 +408,14 @@ resource "linode_instance" "red5pro_sm" {
 }
 
 resource "null_resource" "red5pro_sm" {
-  count = local.cluster_or_autoscale ? 1 : 0
+  count  = local.stream_manager_count
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/home"
 
     connection {
-      host        = linode_instance.red5pro_sm[0].ip_address
+      host        = linode_instance.red5pro_sm[count.index].ip_address
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -429,7 +430,7 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${linode_instance.red5pro_sm[0].ip_address}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${linode_instance.red5pro_sm[count.index].ip_address}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
@@ -439,13 +440,13 @@ resource "null_resource" "red5pro_sm" {
       "sudo -E /home/red5pro-installer/r5p_install_sm2.sh",
     ]
     connection {
-      host        = linode_instance.red5pro_sm[0].ip_address
+      host        = linode_instance.red5pro_sm[count.index].ip_address
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
     }
   }
-  depends_on = [tls_cert_request.kafka_server_csr, null_resource.red5pro_kafka, linode_instance.red5pro_sm]
+  depends_on = [tls_cert_request.kafka_server_csr, null_resource.red5pro_kafka]
 }
 
 resource "linode_instance" "red5pro_node" {
@@ -545,84 +546,6 @@ resource "linode_nodebalancer_config" "red5pro_lbconfig_https"{
 }
 
 ####################################################################################################
-# Red5 Pro Autoscaling Stream Manager 2.0 (Linode Custom Images)
-####################################################################################################
-
-resource "linode_image" "red5pro_sm_image" {
-  count       = local.autoscale ? 1 : 0
-  label       = "${var.name}-sm-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
-  linode_id   = linode_instance.red5pro_sm[0].id
-  disk_id     = linode_instance.red5pro_sm[0].disk[0].id
-  depends_on  = [linode_instance.red5pro_sm]
-  lifecycle {
-    ignore_changes = [label]
-  }
-}
-
-resource "linode_instance" "red5pro_sm_auto" {
-  count           = local.autoscale ? var.stream_manager_count : 0
-  label           = "stream-manager-${count.index + 1}"
-  image           = linode_image.red5pro_sm_image[0].id
-  region          = var.linode_region
-  type            = var.stream_manager_instance_type
-  authorized_keys = [replace(local.ssh_public_key, "\n", "")]
-
-  interface {
-    purpose = "public"
-  }
-
-  interface {
-    purpose   = "vpc"
-    subnet_id = local.subnet_id
-  }
-
-  tags       = ["test"]
-  private_ip = true
-}
-
-resource "null_resource" "red5pro_sm_auto" {
-  count = local.autoscale ? var.stream_manager_count : 0
-
-  provisioner "file" {
-    source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/home"
-
-    connection {
-      host        = linode_instance.red5pro_sm_auto[count.index].ip_address
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo cloud-init status --wait",
-      "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${linode_instance.red5pro_sm_auto[count.index].ip_address}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
-      "export SM_SSL='${local.stream_manager_ssl}'",
-      "export SM_STANDALONE='${local.stream_manager_standalone}'",
-      "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
-      "cd /home/red5pro-installer/",
-      "sudo chmod +x /home/red5pro-installer/*.sh",
-      "sudo -E /home/red5pro-installer/r5p_install_sm2.sh",
-    ]
-    connection {
-      host        = linode_instance.red5pro_sm_auto[count.index].ip_address
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
-  }
-  depends_on = [linode_instance.red5pro_sm_auto]
-}
-
-####################################################################################################
 # Red5 Pro Autoscaling Node Balacer 
 ####################################################################################################
 
@@ -631,9 +554,9 @@ resource "linode_nodebalancer_node" "red5pro_sm_backend-nodes-http" {
   label           = "backend-node-${count.index + 1}"
   nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
   config_id       = linode_nodebalancer_config.red5pro_lbconfig_http[0].id
-  address         = "${element(linode_instance.red5pro_sm_auto[*].private_ip_address, count.index)}:80"
+  address         = "${element(linode_instance.red5pro_sm[*].private_ip_address, count.index)}:80"
   mode            = "accept"
-  depends_on      = [linode_instance.red5pro_sm_auto]
+  depends_on      = [linode_instance.red5pro_sm]
 }
 
 resource "linode_nodebalancer_node" "red5pro_sm_backend-nodes-https" {
@@ -641,9 +564,9 @@ resource "linode_nodebalancer_node" "red5pro_sm_backend-nodes-https" {
   label           = "backend-node-${count.index + 1}"
   nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
   config_id       = linode_nodebalancer_config.red5pro_lbconfig_https[0].id
-  address         = "${element(linode_instance.red5pro_sm_auto[*].private_ip_address, count.index)}:80"
+  address         = "${element(linode_instance.red5pro_sm[*].private_ip_address, count.index)}:80"
   mode            = "accept"
-  depends_on      = [linode_instance.red5pro_sm_auto]
+  depends_on      = [linode_instance.red5pro_sm]
 }
 
 ####################################################################################################
