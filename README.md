@@ -317,7 +317,7 @@ In the following example, Terraform module will automates the infrastructure pro
 - Attaching Node Balancer for Stream Manager 2.0 instances
 - SSL certificate for Noad Balancer. Options:
   - `none` - Load Balancer without HTTPS and SSL certificate. Only HTTP on port `80`
-  - `imported-auto` - Load Balancer with HTTPS and imported SSL certificate. HTTP on port `80`, HTTPS on port `443`
+  - `imported` - Load Balancer with HTTPS and imported SSL certificate. HTTP on port `80`, HTTPS on port `443`
 - Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
 - Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
@@ -372,10 +372,10 @@ module "red5pro" {
   kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
-  https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported-auto - import existing HTTPS/SSL certificate
+  https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported - existing HTTPS/SSL certificate
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
-  # https_ssl_certificate             = "imported-auto"
+  # https_ssl_certificate             = "imported"
   # https_ssl_certificate_domain_name = "red5pro.example.com"
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"

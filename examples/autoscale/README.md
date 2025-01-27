@@ -77,7 +77,7 @@ module "red5pro" {
   https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported-auto - import existing HTTPS/SSL certificate
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
-  # https_ssl_certificate             = "imported-auto"
+  # https_ssl_certificate             = "imported"
   # https_ssl_certificate_domain_name = "red5pro.example.com"
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
