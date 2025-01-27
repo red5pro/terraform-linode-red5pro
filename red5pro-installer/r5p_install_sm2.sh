@@ -158,7 +158,6 @@ start_sm() {
     log_i "Start SM2.0 service"
     systemctl daemon-reload
     systemctl enable sm.service
-    systemctl start sm.service
 
     if [ "$SM_STANDALONE" == "true" ]; then
         log_i "Stream Manager 2.0 standalone mode - start service"
