@@ -292,7 +292,7 @@ services:
       traefik.enable: true
       traefik.http.routers.traefik-ui.entrypoints: websecure
       traefik.http.routers.traefik-ui.tls.certresolver: myresolver
-      traefik.http.routers.traefik-ui.rule: (PathPrefix(`/dashboard`) || PathPrefix(`/api`)) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.traefik-ui.rule: (PathPrefix(`/dashboard`) || PathPrefix(`/api`)) && Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`)
       traefik.http.services.traefik-ui.loadbalancer.server.port: 8080
     logging:
       driver: "json-file"

@@ -67,11 +67,7 @@ module "red5pro" {
   stream_manager_instance_type                  = "g6-dedicated-4"      # Linode Instance type for Stream Manager
   stream_manager_auth_user                      = "example_user"        # Stream Manager 2.0 authentication user name
   stream_manager_auth_password                  = "example_password"    # Stream Manager 2.0 authentication passwordssword
-  stream_manager_count                          = 1
-
-  # Kafka standalone instance configuration
-  kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
-  kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
+  stream_manager_count                          = 1                     # Stream Manager 2.0 instance count
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported-auto - import existing HTTPS/SSL certificate

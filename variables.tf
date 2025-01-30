@@ -328,12 +328,6 @@ variable "ssh_key_existing_private_key_path" {
   default     = ""
 }
 
-variable "ssh_key_existing_public_key_path" {
-  description = "SSH public key path existing"
-  type        = string
-  default     = ""
-}
-
 variable "ssh_key_name_existing" {
   description = "SSH key name existing in cloud"
   type        = string
@@ -492,11 +486,7 @@ variable "linode_root_user_password" {
   type        = string
   default     = "red5pro@1234567899"
 }
-variable "R5AS_CLOUD_PLATFORM_TYPE" {
-  description = "The cloud platform type"
-  type        = string
-  default     = "LINODE"
-}
+
 # Red5 Pro Node image configuration
 variable "node_image_create" {
   description = "Create new Node image true/false."

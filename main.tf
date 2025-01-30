@@ -10,7 +10,6 @@ locals {
   stream_manager_ip             = local.standalone ? linode_instance.standalone_instance[0].ip_address : local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? linode_instance.red5pro_sm[0].ip_address : "null"
   stream_manager_count          = local.autoscale ? var.stream_manager_count : local.cluster ? 1 : 0
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
-  ssh_public_key_path           = var.ssh_key_use_existing ? var.ssh_key_existing_public_key_path : local_file.red5pro_ssh_key_pub[0].filename
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
   ssh_public_key                = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].ssh_key : linode_sshkey.node_ssh_key[0].ssh_key
   ssh_key_name                  = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].label : linode_sshkey.node_ssh_key[0].label
@@ -21,7 +20,6 @@ locals {
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
-  stream_manager_standalone     = local.autoscale ? false : true
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
 }
 
@@ -391,7 +389,6 @@ resource "linode_instance" "red5pro_sm" {
       "TF_VAR_linode_root_user_password=${var.linode_root_user_password}",
       "TF_VAR_linode_ssh_key_name=${local.ssh_key_name}",
       "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
-      "R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
       "TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}",
       "TRAEFIK_SSL_EMAIL=${var.https_ssl_certificate_email}",
@@ -431,9 +428,8 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TRAEFIK_IP=${linode_instance.red5pro_sm[count.index].ip_address}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'R5AS_CLOUD_PLATFORM_TYPE=${var.R5AS_CLOUD_PLATFORM_TYPE}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
-      "export SM_STANDALONE='${local.stream_manager_standalone}'",
+      "export SM_STANDALONE=true",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
       "cd /home/red5pro-installer/",
       "sudo chmod +x /home/red5pro-installer/*.sh",
