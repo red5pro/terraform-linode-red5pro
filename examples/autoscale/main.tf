@@ -46,7 +46,7 @@ module "red5pro" {
   stream_manager_count                          = 1                     # Stream Manager 2.0 instance count
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
-  https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported-auto - import existing HTTPS/SSL certificate
+  https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
