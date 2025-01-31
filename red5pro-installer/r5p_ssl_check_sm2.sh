@@ -18,7 +18,7 @@ log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
 
-HOME="/home/red5pro-installer"
+HOME="/root/red5pro-installer"
 SM_HOME="/usr/local/stream-manager"
 
 if [ "$SM_SSL" == "letsencrypt" ]; then

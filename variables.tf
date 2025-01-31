@@ -445,21 +445,6 @@ variable "stream_manager_auth_password" {
   type        = string
   default     = ""
 }
-variable "stream_manager_autoscaling_desired_capacity" {
-  description = "value to set the desired capacity for Stream Manager 2.0 autoscaling"
-  type        = number
-  default     = 1
-}
-variable "stream_manager_autoscaling_minimum_capacity" {
-  description = "value to set the minimum capacity for Stream Manager 2.0 autoscaling"
-  type        = number
-  default     = 1
-}
-variable "stream_manager_autoscaling_maximum_capacity" {
-  description = "value to set the maximum capacity for Stream Manager 2.0 autoscaling"
-  type        = number
-  default     = 2
-}
 
 variable "kafka_standalone_instance_create" {
   description = "Create a new Kafka standalone instance true/false"
@@ -475,16 +460,6 @@ variable "kafka_standalone_instance_arhive_url" {
   description = "Kafka standalone instance - archive URL"
   type        = string
   default     = "https://downloads.apache.org/kafka/3.8.0/kafka_2.13-3.8.0.tgz"
-}
-variable "kafka_instance_type" {
-  description = "Region for Kafka Instance"
-  type        = string
-  default     = "g6-dedicated-4"
-}
-variable "linode_root_user_password" {
-  description = "Root user password"
-  type        = string
-  default     = "red5pro@1234567899"
 }
 
 # Red5 Pro Node image configuration

@@ -63,6 +63,9 @@ module "red5pro" {
   red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
   red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
+  # Kafka standalone instance configuration
+  kafka_standalone_instance_type        = "g6-dedicated-4"              # Linode Instance type for Kafka standalone instance
+
   # Stream Manager 2.0 instance configuration
   stream_manager_instance_type                  = "g6-dedicated-4"      # Linode Instance type for Stream Manager
   stream_manager_auth_user                      = "example_user"        # Stream Manager 2.0 authentication user name

@@ -89,7 +89,7 @@ resource "linode_instance" "standalone_instance" {
 
     provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/home"
+    destination = "/root"
 
     connection {
       host        = self.ip_address
@@ -101,7 +101,7 @@ resource "linode_instance" "standalone_instance" {
 
     provisioner "file" {
     source      = var.path_to_red5pro_build
-    destination = "/home/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    destination = "/root/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.ip_address
@@ -128,10 +128,10 @@ resource "linode_instance" "standalone_instance" {
       "export NODE_ROUND_TRIP_AUTH_PROTOCOL='${var.standalone_red5pro_round_trip_auth_protocol}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.standalone_red5pro_round_trip_auth_endpoint_validate}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.standalone_red5pro_round_trip_auth_endpoint_invalidate}'",
-      "cd /home/red5pro-installer/",
-      "sudo chmod +x /home/red5pro-installer/*.sh",
-      "sudo -E /home/red5pro-installer/r5p_install_server_basic.sh",
-      "sudo -E /home/red5pro-installer/r5p_config_node_apps_plugins.sh",
+      "cd /root/red5pro-installer/",
+      "sudo chmod +x /root/red5pro-installer/*.sh",
+      "sudo -E /root/red5pro-installer/r5p_install_server_basic.sh",
+      "sudo -E /root/red5pro-installer/r5p_config_node_apps_plugins.sh",
       "sudo systemctl daemon-reload && sudo systemctl start red5pro",
       "sudo mkdir -p /usr/local/red5pro/certs",
       "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem",
@@ -141,7 +141,7 @@ resource "linode_instance" "standalone_instance" {
       "export SSL_MAIL='${var.https_ssl_certificate_email}'",
       "export SSL_PASSWORD='${try(nonsensitive(random_password.ssl_password_red5pro_standalone[0].result), "")}'",
       "export SSL_CERT_PATH=/usr/local/red5pro/certs",
-      "nohup sudo -E /home/red5pro-installer/r5p_ssl_check_install.sh >> /home/red5pro-installer/r5p_ssl_check_install.log &",
+      "nohup sudo -E /root/red5pro-installer/r5p_ssl_check_install.sh >> /root/red5pro-installer/r5p_ssl_check_install.log &",
       "sleep 2"
     ]
     connection {
@@ -278,7 +278,7 @@ resource "linode_instance" "red5pro_kafka" {
   label           = "${var.name}-kafka"
   image           = "linode/ubuntu${var.ubuntu_version}"
   region          = var.linode_region
-  type            = var.kafka_instance_type
+  type            = var.kafka_standalone_instance_type
   authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
   interface {
@@ -299,7 +299,7 @@ resource "null_resource" "red5pro_kafka" {
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/home"
+    destination = "/root"
 
     connection {
       host        = linode_instance.red5pro_kafka[0].ip_address
@@ -312,17 +312,17 @@ resource "null_resource" "red5pro_kafka" {
   provisioner "remote-exec" {
     inline = [     
       "sudo cloud-init status --wait",
-      "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /home/red5pro-installer/server.properties",
-      "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /home/red5pro-installer/server.properties",
-      "echo 'ssl.keystore.certificate.chain=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /home/red5pro-installer/server.properties",
-      "echo 'listener.name.broker.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /home/red5pro-installer/server.properties",
-      "echo 'listener.name.controller.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /home/red5pro-installer/server.properties",
-      "echo 'advertised.listeners=BROKER://${local.kafka_ip}:9092' | sudo tee -a /home/red5pro-installer/server.properties",
+      "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /root/red5pro-installer/server.properties",
+      "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /root/red5pro-installer/server.properties",
+      "echo 'ssl.keystore.certificate.chain=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /root/red5pro-installer/server.properties",
+      "echo 'listener.name.broker.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /root/red5pro-installer/server.properties",
+      "echo 'listener.name.controller.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /root/red5pro-installer/server.properties",
+      "echo 'advertised.listeners=BROKER://${local.kafka_ip}:9092' | sudo tee -a /root/red5pro-installer/server.properties",
       "export KAFKA_ARCHIVE_URL='${var.kafka_standalone_instance_arhive_url}'",
       "export KAFKA_CLUSTER_ID='${random_id.kafka_cluster_id[0].b64_std}'",
-      "cd /home/red5pro-installer/",
-      "sudo chmod +x /home/red5pro-installer/*.sh",
-      "sudo -E /home/red5pro-installer/r5p_kafka_install.sh",
+      "cd /root/red5pro-installer/",
+      "sudo chmod +x /root/red5pro-installer/*.sh",
+      "sudo -E /root/red5pro-installer/r5p_kafka_install.sh",
     ]
 
     connection {
@@ -345,6 +345,13 @@ resource "random_password" "r5as_auth_secret" {
   count   = local.cluster_or_autoscale ? 1 : 0
   length  = 32
   special = false
+}
+
+# Generate random root user password
+resource "random_password" "linode_root_user_password" {
+  count       = local.cluster_or_autoscale ? 1 : 0
+  length      = 16
+  special     = false
 }
 
 resource "linode_instance" "red5pro_sm" {
@@ -386,7 +393,7 @@ resource "linode_instance" "red5pro_sm" {
       "R5AS_AUTH_USER=${var.stream_manager_auth_user}",
       "R5AS_AUTH_PASS=${var.stream_manager_auth_password}",
       "TF_VAR_linode_api_token=${var.linode_api_token}",
-      "TF_VAR_linode_root_user_password=${var.linode_root_user_password}",
+      "TF_VAR_linode_root_user_password=${random_password.linode_root_user_password[0].result}",
       "TF_VAR_linode_ssh_key_name=${local.ssh_key_name}",
       "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
@@ -409,7 +416,7 @@ resource "null_resource" "red5pro_sm" {
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/home"
+    destination = "/root"
 
     connection {
       host        = linode_instance.red5pro_sm[count.index].ip_address
@@ -431,9 +438,9 @@ resource "null_resource" "red5pro_sm" {
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE=true",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
-      "cd /home/red5pro-installer/",
-      "sudo chmod +x /home/red5pro-installer/*.sh",
-      "sudo -E /home/red5pro-installer/r5p_install_sm2.sh",
+      "cd /root/red5pro-installer/",
+      "sudo chmod +x /root/red5pro-installer/*.sh",
+      "sudo -E /root/red5pro-installer/r5p_install_sm2.sh",
     ]
     connection {
       host        = linode_instance.red5pro_sm[count.index].ip_address
@@ -467,7 +474,7 @@ resource "linode_instance" "red5pro_node" {
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/home"
+    destination = "/root"
 
     connection {
       host        = self.ip_address
@@ -479,7 +486,7 @@ resource "linode_instance" "red5pro_node" {
 
   provisioner "file" {
     source      = var.path_to_red5pro_build
-    destination = "/home/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    destination = "/root/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.ip_address
@@ -495,10 +502,10 @@ resource "linode_instance" "red5pro_node" {
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
       "export NODE_API_KEY='${var.red5pro_api_key}'",
-      "cd /home/red5pro-installer/",
-      "sudo chmod +x /home/red5pro-installer/*.sh",
-      "sudo -E /home/red5pro-installer/r5p_install_server_basic.sh",
-      "sudo -E /home/red5pro-installer/r5p_config_node.sh",
+      "cd /root/red5pro-installer/",
+      "sudo chmod +x /root/red5pro-installer/*.sh",
+      "sudo -E /root/red5pro-installer/r5p_install_server_basic.sh",
+      "sudo -E /root/red5pro-installer/r5p_config_node.sh",
     ]
     connection {
       host        = self.ip_address
