@@ -59,7 +59,7 @@ This is a reusable Terraform module that provisions infrastructure on [Linode Cl
 - **cluster** - Stream Manager 2.0 cluster with autoscaling nodes
 - **autoscale** - Autoscaling Stream Managers 2.0 with autoscaling nodes
 
-### Standalone Red5 Pro server (standalone) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/standalone)
+### Standalone Red5 Pro server (standalone) - [Example](/examples/standalone)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the [Red5 Pro standalone server](https://www.red5.net/docs/installation/).
 
