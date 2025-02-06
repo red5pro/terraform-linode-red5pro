@@ -24,7 +24,7 @@ terraform {
   required_providers {
     linode = {
       source  = "linode/linode"
-      version = ">= 2.0"  # You can adjust the version based on the latest
+      version = ">= 2.32.0"
     }
     random = {
       source = "hashicorp/random"
@@ -37,7 +37,7 @@ provider "linode" {
 }
 
 module "red5pro" {
-  source = "../../" 
+  source                = "../../" 
   type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-standalone"                    # Name to be used on all the resources as identifier
   linode_region         = "us-lax"                                # Deployment region

@@ -8,7 +8,7 @@ terraform {
   required_providers {
     linode = {
       source  = "linode/linode"
-      version = ">= 2.0"  # You can adjust the version based on the latest
+      version = ">= 2.32.0"
     }
     random = {
       source = "hashicorp/random"
@@ -45,7 +45,7 @@ module "red5pro" {
   stream_manager_auth_password        = "example_password"    # Stream Manager 2.0 authentication password
 
   # Kafka standalone instance configuration - (Optional)
-  kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
+  kafka_standalone_instance_create      = false                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
   kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration

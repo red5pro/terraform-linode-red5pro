@@ -15,7 +15,7 @@ This is a reusable Terraform module that provisions infrastructure on [Linode Cl
   - Open a terminal and type the following command:
 
     ```sh
-    sudo mv /path/to/terraform /usr/local/bin
+    sudo mv /path/to/terraform /usr/local/bin/
     ```
 
 - Configure PATH for **Windows**:
@@ -59,11 +59,11 @@ This is a reusable Terraform module that provisions infrastructure on [Linode Cl
 - **cluster** - Stream Manager 2.0 cluster with autoscaling nodes
 - **autoscale** - Autoscaling Stream Managers 2.0 with autoscaling nodes
 
-### Standalone Red5 Pro server (standalone) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/standalone)
+## Standalone Red5 Pro server (standalone) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/standalone)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the [Red5 Pro standalone server](https://www.red5.net/docs/installation/).
 
-## Terraform Deployed Resources (standalone)
+### Terraform Deployed Resources (standalone)
 
 - VPC
 - Public subnet
@@ -76,7 +76,7 @@ In the following example, Terraform module will automates the infrastructure pro
   - `letsencrypt` - Red5 Pro server with HTTPS and SSL certificate obtained by Let's Encrypt. HTTP on port `5080`, HTTPS on port `443`
   - `imported` - Red5 Pro server with HTTPS and imported SSL certificate. HTTP on port `5080`, HTTPS on port `443`
 
-## Example main.tf (standalone)
+### Example main.tf (standalone)
 
 ```hcl
 terraform {
@@ -85,7 +85,7 @@ terraform {
   required_providers {
     linode = {
       source  = "linode/linode"
-      version = ">= 2.0"  # You can adjust the version based on the latest
+      version = ">= 2.32.0"
     }
     random = {
       source = "hashicorp/random"
@@ -98,7 +98,7 @@ provider "linode" {
 }
 
 module "red5pro" {
-  source = "../../" 
+  source                = "red5pro/red5pro/linode" 
   type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-standalone"                    # Name to be used on all the resources as identifier
   linode_region         = "us-lax"                                # Deployment region
@@ -150,11 +150,11 @@ output "module_output" {
 }
 ```
 
-# Stream Manager 2.0 cluster with autoscaling nodes (cluster) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/cluster)
+## Stream Manager 2.0 cluster with autoscaling nodes (cluster) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/cluster)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Stream Manager 2.0 cluster with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-## Terraform Deployed Resources (cluster)
+### Terraform Deployed Resources (cluster)
 
 - VPC
 - Public subnet
@@ -172,7 +172,7 @@ In the following example, Terraform module will automates the infrastructure pro
 - Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
 - Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-## Example main.tf (cluster) 
+### Example main.tf (cluster)
 
 ```hcl
 terraform {
@@ -181,7 +181,7 @@ terraform {
   required_providers {
     linode = {
       source  = "linode/linode"
-      version = ">= 2.0"  # You can adjust the version based on the latest
+      version = ">= 2.32.0"
     }
     random = {
       source = "hashicorp/random"
@@ -194,7 +194,7 @@ provider "linode" {
 }
 
 module "red5pro" {
-  source                = "../../"
+  source                = "red5pro/red5pro/linode"
   type                  = "cluster"                               # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-cluster"                       # Name to be used on all the resources as identifier
   linode_region         = "us-lax"                                # Deployment region
@@ -218,7 +218,7 @@ module "red5pro" {
   stream_manager_auth_password        = "example_password"    # Stream Manager 2.0 authentication password
 
   # Kafka standalone instance configuration - (Optional)
-  kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
+  kafka_standalone_instance_create      = false                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
   kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
@@ -297,11 +297,11 @@ output "module_output" {
 ```
 
 
-# Autoscaling Stream Managers 2.0 with autoscaling nodes (autoscale) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/autoscale)
+## Autoscaling Stream Managers 2.0 with autoscaling nodes (autoscale) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/autoscale)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Autoscale Stream Managers 2.0 with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-## Terraform Deployed Resources (autoscale)
+### Terraform Deployed Resources (autoscale)
 
 - VPC
 - Public subnet
@@ -321,7 +321,7 @@ In the following example, Terraform module will automates the infrastructure pro
 - Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
 - Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-## Example main.tf (autoscale)
+### Example main.tf (autoscale)
 
 ```hcl
 terraform {
@@ -330,7 +330,7 @@ terraform {
   required_providers {
     linode = {
       source  = "linode/linode"
-      version = ">= 2.0"  # You can adjust the version based on the latest
+      version = ">= 2.32.0"
     }
     random = {
       source = "hashicorp/random"
@@ -343,7 +343,7 @@ provider "linode" {
 }
 
 module "red5pro" {
-  source                = "../../"
+  source                = "red5pro/red5pro/linode"
   type                  = "autoscale"                                         # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-auto"                                      # Name to be used on all the resources as identifier
   linode_region         = "us-lax"                                            # Deployment region

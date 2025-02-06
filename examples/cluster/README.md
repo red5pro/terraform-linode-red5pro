@@ -29,7 +29,7 @@ terraform {
   required_providers {
     linode = {
       source  = "linode/linode"
-      version = ">= 2.0"  # You can adjust the version based on the latest
+      version = ">= 2.32.0"
     }
     random = {
       source = "hashicorp/random"
@@ -53,7 +53,7 @@ module "red5pro" {
   # SSH key configuration
   ssh_key_use_existing               = false                                                # true - use existing SSH key, false - create new SSH key
   ssh_key_name_existing              = "example-key"                                        # SSH key name existing in LINODE
-  ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"    # Path to existing SSH private key
+  ssh_key_existing_private_key_path  = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"   # Path to existing SSH private key
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
@@ -66,7 +66,7 @@ module "red5pro" {
   stream_manager_auth_password        = "example_password"    # Stream Manager 2.0 authentication password
 
   # Kafka standalone instance configuration - (Optional)
-  kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
+  kafka_standalone_instance_create      = false                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
   kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
