@@ -150,7 +150,7 @@ output "module_output" {
 }
 ```
 
-### Stream Manager 2.0 cluster with autoscaling nodes (cluster) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/cluster)
+### Stream Manager 2.0 cluster with autoscaling nodes (cluster) - [Example](/examples/cluster)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Stream Manager 2.0 cluster with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
@@ -296,7 +296,7 @@ output "module_output" {
 }
 ```
 
-### Autoscaling Stream Managers 2.0 with autoscaling nodes (autoscale) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/autoscale)
+### Autoscaling Stream Managers 2.0 with autoscaling nodes (autoscale) - [Example](/examples/autoscale)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Autoscale Stream Managers 2.0 with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
