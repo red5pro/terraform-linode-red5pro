@@ -59,11 +59,11 @@ This is a reusable Terraform module that provisions infrastructure on [Linode Cl
 - **cluster** - Stream Manager 2.0 cluster with autoscaling nodes
 - **autoscale** - Autoscaling Stream Managers 2.0 with autoscaling nodes
 
-## Standalone Red5 Pro server (standalone) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/standalone)
+### Standalone Red5 Pro server (standalone) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/standalone)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the [Red5 Pro standalone server](https://www.red5.net/docs/installation/).
 
-### Terraform Deployed Resources (standalone)
+#### Terraform Deployed Resources (standalone)
 
 - VPC
 - Public subnet
@@ -76,7 +76,7 @@ In the following example, Terraform module will automates the infrastructure pro
   - `letsencrypt` - Red5 Pro server with HTTPS and SSL certificate obtained by Let's Encrypt. HTTP on port `5080`, HTTPS on port `443`
   - `imported` - Red5 Pro server with HTTPS and imported SSL certificate. HTTP on port `5080`, HTTPS on port `443`
 
-### Example main.tf (standalone)
+#### Example main.tf (standalone)
 
 ```hcl
 terraform {
@@ -150,11 +150,11 @@ output "module_output" {
 }
 ```
 
-## Stream Manager 2.0 cluster with autoscaling nodes (cluster) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/cluster)
+### Stream Manager 2.0 cluster with autoscaling nodes (cluster) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/cluster)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Stream Manager 2.0 cluster with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-### Terraform Deployed Resources (cluster)
+#### Terraform Deployed Resources (cluster)
 
 - VPC
 - Public subnet
@@ -172,7 +172,7 @@ In the following example, Terraform module will automates the infrastructure pro
 - Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
 - Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-### Example main.tf (cluster)
+#### Example main.tf (cluster)
 
 ```hcl
 terraform {
@@ -296,12 +296,11 @@ output "module_output" {
 }
 ```
 
-
-## Autoscaling Stream Managers 2.0 with autoscaling nodes (autoscale) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/autoscale)
+### Autoscaling Stream Managers 2.0 with autoscaling nodes (autoscale) - [Example](https://github.com/red5pro/terraform-linode-red5pro/tree/master/examples/autoscale)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Autoscale Stream Managers 2.0 with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-### Terraform Deployed Resources (autoscale)
+#### Terraform Deployed Resources (autoscale)
 
 - VPC
 - Public subnet
@@ -321,7 +320,7 @@ In the following example, Terraform module will automates the infrastructure pro
 - Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
 - Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-### Example main.tf (autoscale)
+#### Example main.tf (autoscale)
 
 ```hcl
 terraform {
@@ -439,3 +438,6 @@ output "module_output" {
   value = module.red5pro
 }
 ```
+
+> - WebRTC broadcast does not work in WEB browsers without an HTTPS (SSL) certificate.
+> - To activate HTTPS/SSL, you need to add a DNS A record for the public IP address of your Red5 Pro server or Stream Manager 2.0.
