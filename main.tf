@@ -347,13 +347,6 @@ resource "random_password" "r5as_auth_secret" {
   special = false
 }
 
-# Generate random root user password
-resource "random_password" "linode_root_user_password" {
-  count       = local.cluster_or_autoscale ? 1 : 0
-  length      = 16
-  special     = false
-}
-
 resource "linode_instance" "red5pro_sm" {
   count           = local.stream_manager_count
   label           = local.stream_manager_count == 1 ? "${var.name}-sm2" : "${var.name}-sm2-${count.index+1}"
@@ -393,7 +386,6 @@ resource "linode_instance" "red5pro_sm" {
       "R5AS_AUTH_USER=${var.stream_manager_auth_user}",
       "R5AS_AUTH_PASS=${var.stream_manager_auth_password}",
       "TF_VAR_linode_api_token=${var.linode_api_token}",
-      "TF_VAR_linode_root_user_password=${random_password.linode_root_user_password[0].result}",
       "TF_VAR_linode_ssh_key_name=${local.ssh_key_name}",
       "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
