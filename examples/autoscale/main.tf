@@ -47,6 +47,11 @@ module "red5pro" {
   stream_manager_auth_user                      = "example_user"        # Stream Manager 2.0 authentication user name
   stream_manager_auth_password                  = "example_password"    # Stream Manager 2.0 authentication passwordssword
   stream_manager_count                          = 1                     # Stream Manager 2.0 instance count
+  stream_manager_proxy_user                     = "example_proxy_user"       # Stream Manager 2.0 proxy user name
+  stream_manager_proxy_password                 = "example_proxy_password"   # Stream Manager 2.0 proxy password
+  stream_manager_spatial_user                   = "example_spatial_user"     # Stream Manager 2.0 spatial user name
+  stream_manager_spatial_password               = "example_spatial_password" # Stream Manager 2.0 spatial password
+  stream_manager_version                        = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
@@ -99,14 +104,17 @@ module "red5pro" {
   node_group_origins_max               = 20                        # Number of maximum Origins
   node_group_origins_instance_type     = "g6-dedicated-2"          # Origins Linode Instance Type
   node_group_origins_volume_size       = 50                        # Volume size in GB for Origins
+  node_group_origins_connection_limit  = 20                        # Maximum number of publishers to the origin server
   node_group_edges_min                 = 1                         # Number of minimum Edges
   node_group_edges_max                 = 40                        # Number of maximum Edges
   node_group_edges_instance_type       = "g6-dedicated-2"          # Edges Linode Instance Type
   node_group_edges_volume_size         = 50                        # Volume size in GB for Edges
+  node_group_edges_connection_limit    = 200                       # Maximum number of subscribers to the edge server
   node_group_transcoders_min           = 0                         # Number of minimum Transcoders
   node_group_transcoders_max           = 20                        # Number of maximum Transcoders
   node_group_transcoders_instance_type = "g6-dedicated-2"          # Transcoders Linode Instance Type
   node_group_transcoders_volume_size   = 50                        # Volume size in GB for Transcoders
+  node_group_transcoders_connection_limit = 20                     # Maximum number of publishers to the transcoder server
   node_group_relays_min                = 0                         # Number of minimum Relays
   node_group_relays_max                = 20                        # Number of maximum Relays
   node_group_relays_instance_type      = "g6-dedicated-2"          # Relays Linode Instance Type
