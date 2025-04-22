@@ -1,6 +1,6 @@
 #!/bin/bash
 ############################################################################################################
-# Script Name: r5p_install_sm2_oci.sh
+# Script Name: r5p_install_sm2.sh
 # Description: This script install Stream Manager 2.0 instance with Docker containers (docker-compose)
 # AUTHOR: Oles Prykhodko
 # COMPANY: Infrared5, Inc.
@@ -73,7 +73,7 @@ install_docker() {
 
     # Add Docker's official GPG key:
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    curl -4fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     chmod a+r /etc/apt/keyrings/docker.asc
 
     # Add the repository to Apt sources:
@@ -92,11 +92,22 @@ config_sm() {
 
     mkdir -p "$SM_HOME"
 
-    log_i "Copy sm.service file to /lib/systemd/system/sm.service"
+    log_i "Copy sm.service file to $SM_HOME/scripts"
     if [ -f "$CURRENT_DIRECTORY/sm.service" ]; then
         cp "$CURRENT_DIRECTORY/sm.service" /lib/systemd/system/sm.service
     else
         log_e "File $CURRENT_DIRECTORY/sm.service not found"
+        ls -la "$CURRENT_DIRECTORY/"
+        exit 1
+    fi
+
+    log_i "Copy update_run.sh file to $CURRENT_DIRECTORY/update_run.sh"
+    if [ -f "$CURRENT_DIRECTORY/update_run.sh" ]; then
+        mkdir -p "$SM_HOME/scripts"
+        cp "$CURRENT_DIRECTORY/update_run.sh" "$SM_HOME/scripts/update_run.sh"
+        chmod +x "$SM_HOME/scripts/update_run.sh"
+    else
+        log_e "File $CURRENT_DIRECTORY/update_run.sh not found"
         ls -la "$CURRENT_DIRECTORY/"
         exit 1
     fi
@@ -128,7 +139,6 @@ config_sm() {
             ls -la "$CURRENT_DIRECTORY/autoscaling-with-ssl/"
             exit 1
         fi
-    
     else
         log_i "Stream Manager 2.0 without SSL"
 
@@ -185,7 +195,7 @@ start_sm() {
                 exit 1
             fi
 
-            # Modify DNS servers in systemd-resolved to use Google DNS servers
+            # Modify DNS servers in systemd-resolved to use Google DNS servers because of long propagation in OCI DNS servers
             log_i "Modify DNS servers in systemd-resolved"
             echo "DNS=8.8.8.8 8.8.4.4" >>/etc/systemd/resolved.conf
             echo "FallbackDNS=2001:4860:4860::8888 2001:4860:4860::8844" >>/etc/systemd/resolved.conf
