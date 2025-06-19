@@ -7,7 +7,7 @@ locals {
   vcn_name                      = linode_vpc.red5vpc.label
   subnet_id                     = linode_vpc_subnet.red5subnet.id
   subnet_name                   = linode_vpc_subnet.red5subnet.label
-  stream_manager_ip             = local.standalone ? linode_instance.standalone_instance[0].ip_address : local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? linode_instance.red5pro_sm[0].ip_address : "null"
+  stream_manager_ip             = local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? linode_instance.red5pro_sm[0].ip_address : ""
   stream_manager_count          = local.autoscale ? var.stream_manager_count : local.cluster ? 1 : 0
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
@@ -21,6 +21,7 @@ locals {
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
+  r5as_traefik_host             = local.autoscale ? local.stream_manager_ip : var.https_ssl_certificate_domain_name
 }
 
 ################################################################################
@@ -394,7 +395,7 @@ resource "linode_instance" "red5pro_sm" {
       "TF_VAR_linode_ssh_key_name=${local.ssh_key_name}",
       "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
-      "TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}",
+      "TRAEFIK_HOST=${local.r5as_traefik_host}",
       "TRAEFIK_SSL_EMAIL=${var.https_ssl_certificate_email}",
       "TRAEFIK_CMD=${local.stream_manager_ssl == "imported" ? "--providers.file.filename=/scripts/traefik.yaml" : ""}",
       "EOM"
