@@ -3,18 +3,17 @@ locals {
   cluster                       = var.type == "cluster" ? true : false
   autoscale                     = var.type == "autoscale" ? true : false
   cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
-  vcn_id                        = linode_vpc.red5vpc.id
-  vcn_name                      = linode_vpc.red5vpc.label
-  subnet_id                     = linode_vpc_subnet.red5subnet.id
-  subnet_name                   = linode_vpc_subnet.red5subnet.label
-  stream_manager_ip             = local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? linode_instance.red5pro_sm[0].ip_address : ""
+  vpc_name                      = var.vpc_use_existing ? data.linode_vpcs.existing_vpc[0].vpcs[0].label : linode_vpc.red5_vpc[0].label
+  subnet_name                   = var.vpc_use_existing ? data.linode_vpc_subnets.existing_subnet[0].vpc_subnets[0].label : linode_vpc_subnet.red5_subnet[0].label
+  subnet_id                     = var.vpc_use_existing ? data.linode_vpc_subnets.existing_subnet[0].vpc_subnets[0].id : linode_vpc_subnet.red5_subnet[0].id
+  stream_manager_ip             = local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? tolist(linode_instance.red5pro_sm[0].ipv4)[0] : ""
   stream_manager_count          = local.autoscale ? var.stream_manager_count : local.cluster ? 1 : 0
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
   ssh_public_key                = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].ssh_key : linode_sshkey.node_ssh_key[0].ssh_key
   ssh_key_name                  = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].label : linode_sshkey.node_ssh_key[0].label
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
-  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? linode_instance.red5pro_kafka[0].interface[1].ipv4[0].vpc : linode_instance.red5pro_sm[0].interface[1].ipv4[0].vpc : "null"
+  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? tolist(linode_instance.red5pro_kafka[0].ipv4)[0] : tolist(linode_instance.red5pro_sm[0].ipv4)[0] : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
@@ -93,7 +92,7 @@ resource "linode_instance" "standalone_instance" {
     destination = "/root"
 
     connection {
-      host        = self.ip_address
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -105,7 +104,7 @@ resource "linode_instance" "standalone_instance" {
     destination = "/root/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
-      host        = self.ip_address
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -146,7 +145,7 @@ resource "linode_instance" "standalone_instance" {
       "sleep 2"
     ]
     connection {
-      host        = self.ip_address
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -293,22 +292,22 @@ resource "linode_instance" "red5pro_kafka" {
 
   tags       = ["test"]
   private_ip = true
-}
-
-resource "null_resource" "red5pro_kafka" {
-  count = local.kafka_standalone_instance ? 1 : 0
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/root"
 
     connection {
-      host        = linode_instance.red5pro_kafka[0].ip_address
+      host        = tolist(linode_instance.red5pro_kafka[0].ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
     }
   }
+}
+
+resource "null_resource" "red5pro_kafka" {
+  count = local.kafka_standalone_instance ? 1 : 0
 
   provisioner "remote-exec" {
     inline = [     
@@ -327,7 +326,7 @@ resource "null_resource" "red5pro_kafka" {
     ]
 
     connection {
-      host        = linode_instance.red5pro_kafka[0].ip_address
+      host        = tolist(linode_instance.red5pro_kafka[0].ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -368,6 +367,18 @@ resource "linode_instance" "red5pro_sm" {
     tags       = ["test"]
     private_ip = true
 
+  provisioner "file" {
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/root"
+
+    connection {
+      host        = tolist(linode_instance.red5pro_sm[count.index].ipv4)[0]
+      type        = "ssh"
+      user        = "root"
+      private_key = local.ssh_private_key
+    }
+  }
+
   provisioner "remote-exec" {
     inline = [
       # Create necessary directories
@@ -395,13 +406,12 @@ resource "linode_instance" "red5pro_sm" {
       "TF_VAR_linode_ssh_key_name=${local.ssh_key_name}",
       "TF_VAR_r5p_license_key=${var.red5pro_license_key}",
       "TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}",
-      "TRAEFIK_HOST=${local.r5as_traefik_host}",
       "TRAEFIK_SSL_EMAIL=${var.https_ssl_certificate_email}",
       "TRAEFIK_CMD=${local.stream_manager_ssl == "imported" ? "--providers.file.filename=/scripts/traefik.yaml" : ""}",
       "EOM"
     ]
     connection {
-      host        = self.ip_address
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -412,18 +422,6 @@ resource "linode_instance" "red5pro_sm" {
 resource "null_resource" "red5pro_sm" {
   count  = local.stream_manager_count
 
-  provisioner "file" {
-    source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/root"
-
-    connection {
-      host        = linode_instance.red5pro_sm[count.index].ip_address
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
-  }
-
   provisioner "remote-exec" {
     inline = [
       "sudo cloud-init status --wait",
@@ -432,7 +430,8 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${linode_instance.red5pro_sm[count.index].ip_address}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${tolist(linode_instance.red5pro_sm[count.index].ipv4)[0]}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_HOST=${local.r5as_traefik_host}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE=true",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
@@ -441,7 +440,7 @@ resource "null_resource" "red5pro_sm" {
       "sudo -E /root/red5pro-installer/r5p_install_sm2.sh",
     ]
     connection {
-      host        = linode_instance.red5pro_sm[count.index].ip_address
+      host        = tolist(linode_instance.red5pro_sm[count.index].ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -475,7 +474,7 @@ resource "linode_instance" "red5pro_node" {
     destination = "/root"
 
     connection {
-      host        = self.ip_address
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -487,7 +486,7 @@ resource "linode_instance" "red5pro_node" {
     destination = "/root/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
-      host        = self.ip_address
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -506,7 +505,7 @@ resource "linode_instance" "red5pro_node" {
       "sudo -E /root/red5pro-installer/r5p_config_node.sh",
     ]
     connection {
-      host        = self.ip_address
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -619,8 +618,8 @@ resource "null_resource" "node_group" {
       NODE_GROUP_CLOUD_PLATFORM                      = "LINODE"
       NODE_GROUP_REGIONS                             = "${var.linode_region}"
       NODE_GROUP_ENVIRONMENT                         = "${var.name}"
-      NODE_GROUP_VPC_NAME                            = "${var.vpc_label}"
-      NODE_GROUP_SECURITY_GROUP_NAME                 = "${var.node_firewall_label}"
+      NODE_GROUP_VPC_NAME                            = "${local.vpc_name}"
+      NODE_GROUP_SECURITY_GROUP_NAME                 = "${linode_firewall.node_firewall[0].label}"
       NODE_GROUP_IMAGE_NAME                          = "${linode_image.red5pro_node_image[0].label}"
       NODE_GROUP_ORIGINS_MIN                         = "${var.node_group_origins_min}"
       NODE_GROUP_ORIGINS_MAX                         = "${var.node_group_origins_max}"

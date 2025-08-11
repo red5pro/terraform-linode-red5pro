@@ -106,50 +106,54 @@ provider "linode" {
 
 module "red5pro" {
   source                = "red5pro/red5pro/linode" 
-  type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale
-  name                  = "red5pro-standalone"                    # Name to be used on all the resources as identifier
-  linode_region         = "us-lax"                                # Deployment region
-  ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
-  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
+  type                  = "standalone"                                                      # Deployment type: standalone, cluster, autoscale
+  name                  = "red5pro-standalone"                                              # Name to be used on all the resources as identifier
+  linode_region         = "us-lax"                                                          # Deployment region
+  ubuntu_version        = "22.04"                                                           # Ubuntu version for Red5 Pro servers
+  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip"                           # Absolute path or relative path to Red5 Pro server ZIP file
 
   # SSH key configuration
-  ssh_key_use_existing               = false                                                   # true - use existing SSH key, false - create new SSH key
-  ssh_key_name_existing              = "example-key"                                           # SSH key name existing in LINODE
-  ssh_key_existing_private_key_path  = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"      # Path to existing SSH private key
+  ssh_key_use_existing               = false                                                # true - use existing SSH key, false - create new SSH key
+  ssh_key_name_existing              = "example-key"                                        # SSH key name existing in LINODE
+  ssh_key_existing_private_key_path  = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"   # Path to existing SSH private key
+
+  # VPC configuration
+  vpc_use_existing            = false                                                       # Use existing VPC or create a new one. true = use existing, false = create new
+  vpc_name_existing           = "example-vpc"                                               # VPC name of existing VPC if vpc_create is false
+  subnet_name_existing        = "example-subnet"                                            # Subnet name of existing subnet if subnet_create is false
 
   # Red5 Pro general configuration
-  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
-  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
-
-  standalone_red5pro_instance_type   = "g6-dedicated-4"
+  red5pro_license_key = "1111-2222-3333-4444"                                               # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_api_enable  = true                                                                # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key     = "example_key"                                                       # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Standalone Red5 Pro server configuration
-  standalone_red5pro_inspector_enable                    = false                         # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
-  standalone_red5pro_restreamer_enable                   = false                         # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
-  standalone_red5pro_socialpusher_enable                 = false                         # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
-  standalone_red5pro_suppressor_enable                   = false                         # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
-  standalone_red5pro_hls_enable                          = false                         # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
-  standalone_red5pro_round_trip_auth_enable              = false                         # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
-  standalone_red5pro_round_trip_auth_host                = "round-trip-auth.example.com" # Round trip authentication server host
-  standalone_red5pro_round_trip_auth_port                = 3000                          # Round trip authentication server port
-  standalone_red5pro_round_trip_auth_protocol            = "http"                        # Round trip authentication server protocol
-  standalone_red5pro_round_trip_auth_endpoint_validate   = "/validateCredentials"        # Round trip authentication server endpoint for validate
-  standalone_red5pro_round_trip_auth_endpoint_invalidate = "/invalidateCredentials"      # Round trip authentication server endpoint for invalidate
+  standalone_red5pro_instance_type                       = "g6-dedicated-4"                 # Linode Instance type for Red5 Pro server
+  standalone_red5pro_inspector_enable                    = false                            # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
+  standalone_red5pro_restreamer_enable                   = false                            # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
+  standalone_red5pro_socialpusher_enable                 = false                            # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
+  standalone_red5pro_suppressor_enable                   = false                            # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
+  standalone_red5pro_hls_enable                          = false                            # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  standalone_red5pro_round_trip_auth_enable              = false                            # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
+  standalone_red5pro_round_trip_auth_host                = "round-trip-auth.example.com"    # Round trip authentication server host
+  standalone_red5pro_round_trip_auth_port                = 3000                             # Round trip authentication server port
+  standalone_red5pro_round_trip_auth_protocol            = "http"                           # Round trip authentication server protocol
+  standalone_red5pro_round_trip_auth_endpoint_validate   = "/validateCredentials"           # Round trip authentication server endpoint for validate
+  standalone_red5pro_round_trip_auth_endpoint_invalidate = "/invalidateCredentials"         # Round trip authentication server endpoint for invalidate
 
   # Standalone Red5 Pro server HTTPS (SSL) certificate configuration
    https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
-  # https_ssl_certificate = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_email = "email@example.com"
+  # https_ssl_certificate                   = "letsencrypt"
+  # https_ssl_certificate_domain_name       = "red5pro.example.com"
+  # https_ssl_certificate_email             = "email@example.com"
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
-  # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate                   = "imported"
+  # https_ssl_certificate_domain_name       = "red5pro.example.com"
+  # https_ssl_certificate_cert_path         = "/PATH/TO/SSL/CERT/fullchain.pem"
+  # https_ssl_certificate_key_path          = "/PATH/TO/SSL/KEY/privkey.pem"
 }
 
 output "module_output" {
@@ -213,16 +217,21 @@ module "red5pro" {
   ssh_key_use_existing               = false                                                # true - use existing SSH key, false - create new SSH key
   ssh_key_name_existing              = "example-key"                                        # SSH key name existing in LINODE
   ssh_key_existing_private_key_path  = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"   # Path to existing SSH private key
+  
+  # VPC configuration
+  vpc_use_existing            = false                          # Use existing VPC or create a new one. true = use existing, false = create new
+  vpc_name_existing           = "example-vpc"                  # VPC name of existing VPC if vpc_create is false
+  subnet_name_existing        = "example-subnet"               # Subnet name of existing subnet if subnet_create is false
 
   # Red5 Pro general configuration
-  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
-  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  red5pro_license_key = "1111-2222-3333-4444"                  # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_api_enable  = true                                   # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key     = "example_key"                          # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Stream Manager 2.0 instance configuration
-  stream_manager_instance_type        = "g6-dedicated-4"      # Linode Instance type for Stream Manager
-  stream_manager_auth_user            = "example_user"        # Stream Manager 2.0 authentication user name
-  stream_manager_auth_password        = "example_password"    # Stream Manager 2.0 authentication password
+  stream_manager_instance_type    = "g6-dedicated-4"           # Linode Instance type for Stream Manager
+  stream_manager_auth_user        = "example_user"             # Stream Manager 2.0 authentication user name
+  stream_manager_auth_password    = "example_password"         # Stream Manager 2.0 authentication password
   stream_manager_proxy_user       = "example_proxy_user"       # Stream Manager 2.0 proxy user name
   stream_manager_proxy_password   = "example_proxy_password"   # Stream Manager 2.0 proxy password
   stream_manager_spatial_user     = "example_spatial_user"     # Stream Manager 2.0 spatial user name
@@ -230,8 +239,8 @@ module "red5pro" {
   stream_manager_version          = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
 
   # Kafka standalone instance configuration - (Optional)
-  kafka_standalone_instance_create      = false                  # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
-  kafka_standalone_instance_type        = "g6-dedicated-4"      # Linode Instance type for Kafka standalone instance
+  kafka_standalone_instance_create      = false                # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
+  kafka_standalone_instance_type        = "g6-dedicated-8"     # Linode Instance type for Kafka standalone instance
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
@@ -362,7 +371,7 @@ module "red5pro" {
   name                  = "red5pro-auto"                                      # Name to be used on all the resources as identifier
   linode_region         = "us-lax"                                            # Deployment region
   ubuntu_version        = "22.04"                                             # Ubuntu version for Red5 Pro servers  
-  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip"             # Absolute path or relative path to Red5 Pro server ZIP file
+  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zipp"            # Absolute path or relative path to Red5 Pro server ZIP file
   linode_api_token      = "<linode token>"                                    # Linode API token from Linode Cloud  
 
   # SSH key configuration
@@ -370,33 +379,39 @@ module "red5pro" {
   ssh_key_name_existing              = "example-key"                                      # SSH key name existing in LINODE
   ssh_key_existing_private_key_path  = "PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem"  # Path to existing SSH private key
 
+  # VPC configuration
+  vpc_use_existing            = false                 # Use existing VPC or create a new one. true = use existing, false = create new
+  vpc_name_existing           = "example-vpc"         # VPC name of existing VPC if vpc_create is false
+  subnet_name_existing        = "example-subnet"      # Subnet name of existing subnet if subnet_create is false
+
   # Red5 Pro general configuration
-  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
-  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  red5pro_license_key         = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_api_enable          = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key             = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Kafka standalone instance configuration
-  kafka_standalone_instance_type        = "g6-dedicated-4"              # Linode Instance type for Kafka standalone instance
+  kafka_standalone_instance_type        = "g6-dedicated-8"              # Linode Instance type for Kafka standalone instance
 
   # Stream Manager 2.0 instance configuration
-  stream_manager_instance_type                  = "g6-dedicated-4"      # Linode Instance type for Stream Manager
-  stream_manager_auth_user                      = "example_user"        # Stream Manager 2.0 authentication user name
-  stream_manager_auth_password                  = "example_password"    # Stream Manager 2.0 authentication passwordssword
-  stream_manager_count                          = 1                     # Stream Manager 2.0 instance count
-  stream_manager_proxy_user                     = "example_proxy_user"       # Stream Manager 2.0 proxy user name
-  stream_manager_proxy_password                 = "example_proxy_password"   # Stream Manager 2.0 proxy password
-  stream_manager_spatial_user                   = "example_spatial_user"     # Stream Manager 2.0 spatial user name
-  stream_manager_spatial_password               = "example_spatial_password" # Stream Manager 2.0 spatial password
-  stream_manager_version                        = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
+  stream_manager_instance_type          = "g6-dedicated-4"           # Linode Instance type for Stream Manager
+  stream_manager_auth_user              = "example_user"             # Stream Manager 2.0 authentication user name
+  stream_manager_auth_password          = "example_password"         # Stream Manager 2.0 authentication passwordssword
+  stream_manager_count                  = 1                          # Stream Manager 2.0 instance count
+  stream_manager_proxy_user             = "example_proxy_user"       # Stream Manager 2.0 proxy user name
+  stream_manager_proxy_password         = "example_proxy_password"   # Stream Manager 2.0 proxy password
+  stream_manager_spatial_user           = "example_spatial_user"     # Stream Manager 2.0 spatial user name
+  stream_manager_spatial_password       = "example_spatial_password" # Stream Manager 2.0 spatial password
+  stream_manager_version                = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
-  https_ssl_certificate = "none"                                # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
+  https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
   # https_ssl_certificate_domain_name = "red5pro.example.com"
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+
 
   # Red5 Pro autoscaling Node image configuration
   node_image_create             = true                  # Default: true for Autoscaling and Cluster, true - create new Red5 Pro Node image, false - do not create new Red5 Pro Node image

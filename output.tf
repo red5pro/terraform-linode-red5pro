@@ -1,11 +1,11 @@
 output "vpc_name" {
   description = "The ID of the VPC"
-  value       = linode_vpc.red5vpc.label
+  value       = local.vpc_name
 }
 
 output "subnet_name" {
   description = "The ID of the VPC subnet"
-  value       = linode_vpc_subnet.red5subnet.label
+  value       = local.subnet_name
 }
 
 output "ssh_private_key_path" {
@@ -15,12 +15,12 @@ output "ssh_private_key_path" {
 
 output "standalone_red5pro_server_ip" {
   description = "Standalone Red5 Pro Server IP"
-  value       = local.standalone ? linode_instance.standalone_instance[0].ip_address : ""
+  value       = local.standalone ? tolist(linode_instance.standalone_instance[0].ipv4)[0] : ""
 }
 
 output "standalone_red5pro_server_http_url" {
   description = "Standalone Red5 Pro Server HTTP URL"
-  value       = local.standalone ? "http://${linode_instance.standalone_instance[0].ip_address}:5080" : ""
+  value       = local.standalone ? "http://${tolist(linode_instance.standalone_instance[0].ipv4)[0]}:5080" : ""
 }
 
 output "standalone_red5pro_server_https_url" {
@@ -47,7 +47,7 @@ output "stream_manager_url_https" {
   description = "Stream Manager HTTPS URL"
   value       = local.cluster_or_autoscale ? var.https_ssl_certificate != "none" ? "https://${var.https_ssl_certificate_domain_name}:443" : "" : ""
 }
-output "stream_manager_red5pro_node_image" {
+output "stream_manager_node_image" {
   description = "Stream Manager 2.0 Red5 Pro Node Image (OCI Custom Image)"
   value       = try(linode_image.red5pro_node_image[0].label, "")
 }

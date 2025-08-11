@@ -1,8 +1,19 @@
 # VPC Configuration
-variable "vpc_label" {
-  description = "The label for the VPC"
+variable "vpc_use_existing" {
+  description = "Use existing VPC or create a new one. true = use existing, false = create new"
+  type        = bool
+  default     = true
+}
+variable "vpc_name_existing" {
+  description = "Existing VPC name which is used to configure the instances."
   type        = string
-  default     = "red5-vpc"
+  default     = ""
+}
+
+variable "subnet_name_existing" {
+  description = "Existing VPC subnet name which is used to configure the instances."
+  type        = string
+  default     = ""
 }
 
 variable "linode_region" {
@@ -11,33 +22,108 @@ variable "linode_region" {
   default     = "us-lax"
 }
 
-variable "vpc_description" {
-  description = "The description for the VPC"
-  type        = string
-  default     = "Red5Pro Test VPC"
-}
-
 # Subnet Configuration
-variable "subnet_label" {
-  description = "The label for the VPC subnet"
-  type        = string
-  default     = "red5pro-autoscaling-subnet"
-}
-
-variable "subnet_ipv4" {
+variable "subnet_cidr" {
   description = "The IPv4 CIDR block for the subnet"
   type        = string
   default     = "10.0.0.0/16"
 }
 
-# Firewall Configuration for Stream Manager - Standalone
-variable "sm_standalone_firewall_label" {
-  description = "The label for the stream manager standalone firewall"
-  type        = string
-  default     = "red5pro-autoscaling-sm-sg"
+variable "standalone_firewall_inbound_rules" {
+  description = "The inbound firewall rules for standalone server"
+  type = list(object({
+    label    = string
+    action   = string
+    protocol = string
+    ports    = string
+    ipv4     = list(string)
+    ipv6     = list(string)
+  }))
+  default = [
+    {
+      label    = "http-80"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "80"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "SSH-22"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "22"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "https-443"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "443"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "http-5080"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "5080"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "rtmp-1935"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "1935"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "rtmps-1936"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "1936"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "rtsp-8554"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "8554"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "Restreamer-SRT-TCP"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "8000-8100"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "Restreamer-SRT-UDP"
+      action   = "ACCEPT"
+      protocol = "UDP"
+      ports    = "8000-8100"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "udp"
+      action   = "ACCEPT"
+      protocol = "UDP"
+      ports    = "40000-65535"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    }
+  ]
 }
 
-variable "sm_standalone_firewall_inbound_rules" {
+variable "sm_inbound_rules" {
   description = "The inbound firewall rules for stream manager"
   type = list(object({
     label    = string
@@ -49,7 +135,15 @@ variable "sm_standalone_firewall_inbound_rules" {
   }))
   default = [
     {
-      label    = "allow-http"
+      label    = "ssh-22"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "22"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "http-80"
       action   = "ACCEPT"
       protocol = "TCP"
       ports    = "80"
@@ -75,59 +169,7 @@ variable "sm_standalone_firewall_inbound_rules" {
   ]
 }
 
-# Firewall Configuration for Stream Manager
-variable "sm_firewall_label" {
-  description = "The label for the stream manager firewall"
-  type        = string
-  default     = "red5pro-autoscaling-sm-sg"
-}
-
-variable "sm_firewall_inbound_rules" {
-  description = "The inbound firewall rules for stream manager"
-  type = list(object({
-    label    = string
-    action   = string
-    protocol = string
-    ports    = string
-    ipv4     = list(string)
-    ipv6     = list(string)
-  }))
-  default = [
-    {
-      label    = "allow-http"
-      action   = "ACCEPT"
-      protocol = "TCP"
-      ports    = "80"
-      ipv4     = ["0.0.0.0/0"]
-      ipv6     = ["::/0"]
-    },
-    {
-      label    = "allow-https"
-      action   = "ACCEPT"
-      protocol = "TCP"
-      ports    = "443"
-      ipv4     = ["0.0.0.0/0"]
-      ipv6     = ["::/0"]
-    },
-    {
-      label    = "kafka-rule"
-      action   = "ACCEPT"
-      protocol = "TCP"
-      ports    = "9092"
-      ipv4     = ["0.0.0.0/0"]
-      ipv6     = ["::/0"]
-    }
-  ]
-}
-
-# Firewall Configuration for Node Instances
-variable "node_firewall_label" {
-  description = "The label for the node firewall"
-  type        = string
-  default     = "red5pro-autoscale-node-sg"
-}
-
-variable "node_firewall_inbound_rules" {
+variable "node_inbound_rules" {
   description = "The inbound firewall rules for node instances"
   type = list(object({
     label    = string
@@ -139,7 +181,7 @@ variable "node_firewall_inbound_rules" {
   }))
   default = [
     {
-      label    = "http"
+      label    = "http-80"
       action   = "ACCEPT"
       protocol = "TCP"
       ports    = "80"
@@ -147,10 +189,66 @@ variable "node_firewall_inbound_rules" {
       ipv6     = ["::/0"]
     },
     {
-      label    = "rtmp"
+      label    = "ssh-22"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "22"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "https-443"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "443"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "http-5080"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "5080"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "rtmp-1935"
       action   = "ACCEPT"
       protocol = "TCP"
       ports    = "1935"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "rtmps-1936"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "1936"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "rtsp-8554"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "8554"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "Restreamer-SRT-TCP"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "8000-8100"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "Restreamer-SRT-UDP"
+      action   = "ACCEPT"
+      protocol = "UDP"
+      ports    = "8000-8100"
       ipv4     = ["0.0.0.0/0"]
       ipv6     = ["::/0"]
     },
@@ -161,20 +259,12 @@ variable "node_firewall_inbound_rules" {
       ports    = "40000-65535"
       ipv4     = ["0.0.0.0/0"]
       ipv6     = ["::/0"]
-    },
-    {
-      label    = "kafka-rule-to-check"
-      action   = "ACCEPT"
-      protocol = "TCP"
-      ports    = "9092"
-      ipv4     = ["0.0.0.0/0"]
-      ipv6     = ["::/0"]
     }
   ]
 }
 
-variable "network_security_group_kafka_ingress" {
-  description = "List of ports for security group ingress rules for Kafka standalone instance"
+variable "kafka_inbound_rules" {
+  description = "List of ports for security group inbound rules for Kafka standalone instance"
   type = list(object({
     label    = string
     action   = string
@@ -203,8 +293,8 @@ variable "network_security_group_kafka_ingress" {
   ]
 }
 
-variable "node_ingress" {
-  description = "List of ports for security group ingress rules for Kafka standalone instance"
+variable "lb_ingbound_rules" {
+  description = "List of ports for security group ingress rules for load balancer"
   type = list(object({
     label    = string
     action   = string
@@ -241,23 +331,13 @@ variable "node_ingress" {
   ]
 }
 
-variable "kafka_firewall_label"{
-  type        = string
-  default     = "kafka-firewall"
-}
-
-variable "node_balancer_label"{
-  type        = string
-  default     = "nodebalancer-firewall"
-}
-
 # Red5 Pro common configurations
 variable "name" {
   description = "Name to be used on all the resources as identifier"
   type        = string
   default     = ""
   validation {
-    condition     = length(var.name) > 0
+    condition     = length(var.name) > 0 
     error_message = "The name value must be a valid! Example: example-name"
   }
 }

@@ -264,8 +264,6 @@ services:
         condition: service_healthy
       as-terraform:
         condition: service_started
-      as-admin:
-        condition: service_started
       as-auth:
         condition: service_started
       as-streams:
