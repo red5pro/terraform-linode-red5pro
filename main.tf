@@ -387,6 +387,12 @@ resource "linode_instance" "red5pro_sm" {
       # Write certificate and key files
       "sudo echo '${try(file(var.https_ssl_certificate_cert_path), "")}' > /usr/local/stream-manager/certs/cert.pem",
       "sudo echo '${try(file(var.https_ssl_certificate_key_path), "")}' > /usr/local/stream-manager/certs/privkey.pem",
+      # Get hostname and extract instance number
+      HOSTNAME=$(hostname)
+      # Extract instance number from hostname (e.g., "name-stream-manager-abc1" -> "abc1")
+      INSTANCE_NUMBER=$(echo $HOSTNAME | sed 's/.*-sm2-//')
+      # Append the R5AS_GROUP_INSTANCE_ID to the .env file
+      echo "R5AS_GROUP_INSTANCE_ID=$INSTANCE_NUMBER" >> /usr/local/stream-manager/.env
       # Create .env file with environment variables
       "cat >> /usr/local/stream-manager/.env <<- EOM",
       "KAFKA_CLUSTER_ID=${random_id.kafka_cluster_id[0].b64_std}",
