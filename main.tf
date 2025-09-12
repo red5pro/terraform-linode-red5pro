@@ -372,7 +372,7 @@ resource "linode_instance" "red5pro_sm" {
     destination = "/root"
 
     connection {
-      host        = tolist(linode_instance.red5pro_sm[count.index].ipv4)[0]
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -387,14 +387,9 @@ resource "linode_instance" "red5pro_sm" {
       # Write certificate and key files
       "sudo echo '${try(file(var.https_ssl_certificate_cert_path), "")}' > /usr/local/stream-manager/certs/cert.pem",
       "sudo echo '${try(file(var.https_ssl_certificate_key_path), "")}' > /usr/local/stream-manager/certs/privkey.pem",
-      # Get hostname and extract instance number
-      HOSTNAME=$(hostname)
-      # Extract instance number from hostname (e.g., "name-stream-manager-abc1" -> "abc1")
-      INSTANCE_NUMBER=$(echo $HOSTNAME | sed 's/.*-sm2-//')
-      # Append the R5AS_GROUP_INSTANCE_ID to the .env file
-      echo "R5AS_GROUP_INSTANCE_ID=$INSTANCE_NUMBER" >> /usr/local/stream-manager/.env
       # Create .env file with environment variables
       "cat >> /usr/local/stream-manager/.env <<- EOM",
+      "R5AS_GROUP_INSTANCE_ID=${count.index+1}",
       "KAFKA_CLUSTER_ID=${random_id.kafka_cluster_id[0].b64_std}",
       "KAFKA_ADMIN_USERNAME=${random_string.kafka_admin_username[0].result}",
       "KAFKA_ADMIN_PASSWORD=${random_id.kafka_admin_password[0].id}",
