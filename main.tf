@@ -372,7 +372,7 @@ resource "linode_instance" "red5pro_sm" {
     destination = "/root"
 
     connection {
-      host        = tolist(linode_instance.red5pro_sm[count.index].ipv4)[0]
+      host        = tolist(self.ipv4)[0]
       type        = "ssh"
       user        = "root"
       private_key = local.ssh_private_key
@@ -389,6 +389,7 @@ resource "linode_instance" "red5pro_sm" {
       "sudo echo '${try(file(var.https_ssl_certificate_key_path), "")}' > /usr/local/stream-manager/certs/privkey.pem",
       # Create .env file with environment variables
       "cat >> /usr/local/stream-manager/.env <<- EOM",
+      "R5AS_GROUP_INSTANCE_ID=${count.index+1}",
       "KAFKA_CLUSTER_ID=${random_id.kafka_cluster_id[0].b64_std}",
       "KAFKA_ADMIN_USERNAME=${random_string.kafka_admin_username[0].result}",
       "KAFKA_ADMIN_PASSWORD=${random_id.kafka_admin_password[0].id}",
