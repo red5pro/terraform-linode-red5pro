@@ -80,7 +80,7 @@ services:
       - ./scripts/update_run.sh:/tmp/update_run.sh
     command: "bash -c 'if [ ! -f /tmp/update_run.sh ]; then echo \"ERROR: Script was not found /tmp/update_run.sh\" && exit 1 ; else /tmp/update_run.sh && /etc/confluent/docker/run ; fi'"
     healthcheck:
-      test: nc -z localhost 9092 || exit -1
+      test: ["CMD", "bash", "-c", "timeout 10 bash -c '</dev/tcp/localhost/9092' || exit 1"]
       interval: 10s
       timeout: 60s
       retries: 18  # 3 mins
