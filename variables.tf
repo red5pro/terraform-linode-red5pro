@@ -489,7 +489,7 @@ variable "https_ssl_certificate" {
   }
 }
 variable "https_ssl_certificate_domain_name" {
-  description = "Domain name for SSL certificate (letsencrypt/imported)"
+  description = "Certificate identity for Let's Encrypt or imported cert. May be a wildcard (e.g. *.example.com). For cluster/autoscale, user-facing URLs and Traefik use stream_manager_public_hostname (a concrete FQDN covered by that cert), not this value."
   type        = string
   default     = ""
 }
@@ -755,6 +755,16 @@ variable "stream_manager_version" {
   description = "value to set the version for Stream Manager 2.0"
   type        = string
   default     = "latest"
+}
+variable "stream_manager_admin_ui_version" {
+  description = "value to set the version for Stream Manager 2.0 Admin UI image (Optional) - if not set it will use version from stream_manager_version variable"
+  type        = string
+  default     = ""
+}
+variable "stream_manager_public_hostname" {
+  description = "Public FQDN for Stream Manager 2.0 (cluster/autoscale): TRAEFIK_HOST, admin UI API base, stream_manager_url_https, etc. Must be a real hostname (e.g. sm.example.com), not a wildcard. https_ssl_certificate_domain_name may still be *.example.com if this host is under that zone."
+  type        = string
+  default     = ""
 }
 variable "node_group_origins_connection_limit" {
   description = "Connection limit for Origins (maximum number of publishers to the origin server)"
