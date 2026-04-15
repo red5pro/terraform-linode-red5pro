@@ -167,6 +167,8 @@ output "module_output" {
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Stream Manager 2.0 cluster with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
+Set **`stream_manager_public_hostname`** to the DNS name clients use for Stream Manager (e.g. `sm.example.com`). It configures Traefik, the admin UI API base URL, and outputs such as `stream_manager_url_https`. Use a real FQDN, not a wildcard. **`https_ssl_certificate_domain_name`** is separate: it identifies the TLS certificate (and may be a wildcard like `*.example.com` or an ACM primary name) as long as the cert covers `stream_manager_public_hostname`.
+
 #### Terraform Deployed Resources (cluster)
 
 - VPC
@@ -326,6 +328,8 @@ output "module_output" {
 ### Autoscaling Stream Managers 2.0 with autoscaling nodes (autoscale) - [Example](/examples/autoscale)
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Autoscale Stream Managers 2.0 with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
+
+Set **`stream_manager_public_hostname`** to the DNS name clients use (e.g. `sm.example.com`); point DNS at the load balancer hostname from outputs. It configures Traefik, the admin UI, and `stream_manager_url_https`. Use a concrete FQDN, not a wildcard. **`https_ssl_certificate_domain_name`** selects the ACM / TLS identity and may be a wildcard if it covers this hostname.
 
 #### Terraform Deployed Resources (autoscale)
 
