@@ -70,6 +70,8 @@ This is a reusable Terraform module that provisions infrastructure on [Linode Cl
 
 In the following example, Terraform module will automates the infrastructure provisioning of the [Red5 Pro standalone server](https://www.red5.net/docs/installation/).
 
+**`stream_manager_public_hostname`** is only for **cluster** and **autoscale** deployments. Standalone uses **`https_ssl_certificate_domain_name`** when TLS is enabled.
+
 #### Terraform Deployed Resources (standalone)
 
 - VPC
@@ -146,14 +148,14 @@ module "red5pro" {
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
   # https_ssl_certificate                   = "letsencrypt"
-  # https_ssl_certificate_domain_name       = "red5pro.example.com"
-  # https_ssl_certificate_email             = "email@example.com"
+  # https_ssl_certificate_domain_name       = "red5pro.example.com"                         # FQDN on the certificate and in browser HTTPS URLs for this server
+  # https_ssl_certificate_email             = "email@example.com"                           # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate                   = "imported"
-  # https_ssl_certificate_domain_name       = "red5pro.example.com"
-  # https_ssl_certificate_cert_path         = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path          = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate_domain_name       = "red5pro.example.com"                         # FQDN on the certificate and in browser HTTPS URLs for this server
+  # https_ssl_certificate_cert_path         = "/PATH/TO/SSL/CERT/fullchain.pem"             # Path to cert file or full chain file
+  # https_ssl_certificate_key_path          = "/PATH/TO/SSL/KEY/privkey.pem"                # Path to privkey file
 }
 
 output "module_output" {
@@ -237,6 +239,7 @@ module "red5pro" {
   stream_manager_spatial_user     = "example_spatial_user"     # Stream Manager 2.0 spatial user name
   stream_manager_spatial_password = "example_spatial_password" # Stream Manager 2.0 spatial password
   stream_manager_version          = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
+  stream_manager_public_hostname  = "sm.example.com"           # Required: public FQDN for Traefik, admin UI, and HTTPS URLs (not a wildcard). Point DNS A record at the Stream Manager IP from outputs.
 
   # Kafka standalone instance configuration - (Optional)
   kafka_standalone_instance_create      = false                # true - create new Kafka standalone instance, false - not create new Kafka standalone instance and use Kafka on the Stream Manager 2.0 instance
@@ -247,14 +250,14 @@ module "red5pro" {
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
   # https_ssl_certificate             = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_email       = "email@example.com"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Cert domain name (may be *.example.com); must cover stream_manager_public_hostname
+  # https_ssl_certificate_email       = "email@example.com"    # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Cert domain name (may be *.example.com); must cover stream_manager_public_hostname
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 
   # Red5 Pro autoscaling Node image configuration
   node_image_create             = true                  # Default: true for Autoscaling and Cluster, true - create new Red5 Pro Node image, false - do not create new Red5 Pro Node image
@@ -402,15 +405,16 @@ module "red5pro" {
   stream_manager_spatial_user           = "example_spatial_user"     # Stream Manager 2.0 spatial user name
   stream_manager_spatial_password       = "example_spatial_password" # Stream Manager 2.0 spatial password
   stream_manager_version                = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
+  stream_manager_public_hostname        = "sm.example.com"           # Required: public FQDN for Traefik, admin UI, and HTTPS URLs (not a wildcard). Point DNS A/alias at the load balancer DNS name from outputs.
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"              # Cert domain name (may be *.example.com); must cover stream_manager_public_hostname
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"  # Path to certificate fullchain file
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"     # Path to certificate privkey file
 
 
   # Red5 Pro autoscaling Node image configuration

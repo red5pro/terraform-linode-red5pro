@@ -20,7 +20,8 @@ locals {
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
-  r5as_traefik_host             = local.autoscale ? local.stream_manager_ip : var.https_ssl_certificate_domain_name
+  red5pro_node_image_name       = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${formatdate("DDMMMYY-hhmm", timestamp())}" : ""
+  red5pro_node_security_group_name = local.cluster_or_autoscale ? linode_firewall.node_firewall[0].label : ""
 }
 
 ################################################################################
@@ -434,7 +435,12 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'TRAEFIK_IP=${tolist(linode_instance.red5pro_sm[count.index].ipv4)[0]}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_HOST=${local.r5as_traefik_host}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_HOST=${var.stream_manager_public_hostname}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'AS_ADMIN_UI_VERSION=${var.stream_manager_admin_ui_version}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'AS_ADMIN_UI_MAIN_REGION=${var.linode_region}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'AS_ADMIN_UI_LINODE_VPC=${local.vpc_name}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'AS_ADMIN_UI_LINODE_SECURITY_GROUP=${local.red5pro_node_security_group_name}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE=true",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
@@ -453,6 +459,12 @@ resource "null_resource" "red5pro_sm" {
     }
   }
   depends_on = [tls_cert_request.kafka_server_csr, null_resource.red5pro_kafka]
+  lifecycle {
+    precondition {
+      condition     = var.stream_manager_public_hostname != ""
+      error_message = "ERROR! Value in variable stream_manager_public_hostname must be a valid FQDN! Example: sm.example.com"
+    }
+  }
 }
 
 resource "linode_instance" "red5pro_node" {
@@ -582,7 +594,7 @@ resource "linode_nodebalancer_node" "red5pro_sm_backend-nodes-https" {
 # Node - Create image (Linode Custom Images)
 resource "linode_image" "red5pro_node_image" {
   count       = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
-  label       = "${var.name}-node-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
+  label       = local.red5pro_node_image_name
   disk_id     = linode_instance.red5pro_node[0].disk[0].id
   linode_id   = linode_instance.red5pro_node[0].id
   depends_on  = [linode_instance.red5pro_node]
