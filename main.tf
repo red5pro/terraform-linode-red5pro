@@ -20,7 +20,7 @@ locals {
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
-  red5pro_node_image_name       = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${formatdate("DDMMMYY-hhmm", timestamp())}" : ""
+  red5pro_node_image_name       = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
   red5pro_node_security_group_name = local.cluster_or_autoscale ? linode_firewall.node_firewall[0].label : ""
 }
 
@@ -403,6 +403,8 @@ resource "linode_instance" "red5pro_sm" {
       "R5AS_PROXY_PASS=${var.stream_manager_proxy_password}",
       "R5AS_SPATIAL_USER=${var.stream_manager_spatial_user}",
       "R5AS_SPATIAL_PASS=${var.stream_manager_spatial_password}",
+      "R5AS_CONFERENCE_SECRET=${random_id.r5as_conference_secret[0].hex}",
+      "R5AS_NODE_API_ACCESS_TOKEN=${var.red5pro_api_key}",
       "CONTAINER_REGISTRY=${var.stream_manager_container_registry}",
       "AS_VERSION=${var.stream_manager_version}",
       "AS_TESTBED_VERSION=${var.stream_manager_testbed_version}",
@@ -590,6 +592,17 @@ resource "linode_nodebalancer_node" "red5pro_sm_backend-nodes-https" {
 ####################################################################################################
 # Red5 Pro Autoscaling Nodes create images - Origin/Edge/Transcoders/Relay (Linode Custom Images)
 ####################################################################################################
+
+resource "random_id" "r5as_conference_secret" {
+  count       = local.cluster_or_autoscale ? 1 : 0
+  byte_length = 16
+}
+
+resource "random_id" "node_image_suffix" {
+  count       = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
+  byte_length = 4
+}
+
 
 # Node - Create image (Linode Custom Images)
 resource "linode_image" "red5pro_node_image" {
