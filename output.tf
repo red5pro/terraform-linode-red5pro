@@ -54,3 +54,8 @@ output "stream_manager_node_image" {
   description = "Stream Manager 2.0 Red5 Pro Node Image (OCI Custom Image)"
   value       = try(linode_image.red5pro_node_image[0].label, "")
 }
+
+output "r5as_conference_secret" {
+  description = "Auto-generated R5AS Conference secret (hex)"
+  value       = try(random_id.r5as_conference_secret[0].hex, "")
+}
