@@ -289,7 +289,7 @@ variable "kafka_inbound_rules" {
       ports    = "9092"
       ipv4     = ["10.0.0.0/16"]
       ipv6     = ["::/0"]
-    }   
+    }
   ]
 }
 
@@ -337,7 +337,7 @@ variable "name" {
   type        = string
   default     = ""
   validation {
-    condition     = length(var.name) > 0 
+    condition     = length(var.name) > 0
     error_message = "The name value must be a valid! Example: example-name"
   }
 }
@@ -391,8 +391,8 @@ variable "ubuntu_version" {
 }
 
 variable "linode_api_token" {
-    type    = string
-    default = "" 
+  type    = string
+  default = ""
 }
 
 # SSH key configuration
@@ -601,26 +601,6 @@ variable "node_config_social_pusher" {
     target_nodes = []
   }
 }
-variable "node_config_restreamer" {
-  description = "Restreamer configuration - (Optional) https://www.red5.net/docs/special/restreamer/overview/"
-  type = object({
-    enable               = bool
-    target_nodes         = list(string)
-    restreamer_tsingest  = bool
-    restreamer_ipcam     = bool
-    restreamer_whip      = bool
-    restreamer_srtingest = bool
-  })
-  default = {
-    enable               = false
-    target_nodes         = []
-    restreamer_tsingest  = false
-    restreamer_ipcam     = false
-    restreamer_whip      = false
-    restreamer_srtingest = false
-  }
-}
-
 # Red5 Pro autoscale SM
 variable "stream_manager_count" {
   description = "SM instance count for autoscale"
@@ -756,30 +736,10 @@ variable "stream_manager_version" {
   type        = string
   default     = "latest"
 }
-variable "stream_manager_admin_ui_version" {
-  description = "value to set the version for Stream Manager 2.0 Admin UI image (Optional) - if not set it will use version from stream_manager_version variable"
-  type        = string
-  default     = ""
-}
 variable "stream_manager_public_hostname" {
   description = "Public FQDN for Stream Manager 2.0 (cluster/autoscale): TRAEFIK_HOST, admin UI API base, stream_manager_url_https, etc. Must be a real hostname (e.g. sm.example.com), not a wildcard. https_ssl_certificate_domain_name may still be *.example.com if this host is under that zone."
   type        = string
   default     = ""
-}
-variable "node_group_origins_connection_limit" {
-  description = "Connection limit for Origins (maximum number of publishers to the origin server)"
-  type        = number
-  default     = 20
-}
-variable "node_group_edges_connection_limit" {
-  description = "Connection limit for Edges (maximum number of subscribers to the edge server)"
-  type        = number
-  default     = 200
-}
-variable "node_group_transcoders_connection_limit" {
-  description = "Connection limit for Transcoders (maximum number of publishers to the transcoder server)"
-  type        = number
-  default     = 20
 }
 variable "stream_manager_container_registry" {
   description = "value to set the container registry for Stream Manager 2.0 (Optional) Example: container-registry/my-repo"
