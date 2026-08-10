@@ -489,7 +489,7 @@ variable "https_ssl_certificate" {
   }
 }
 variable "https_ssl_certificate_domain_name" {
-  description = "Certificate identity for Let's Encrypt or imported cert. May be a wildcard (e.g. *.example.com). For cluster/autoscale, user-facing URLs and Traefik use stream_manager_public_hostname (a concrete FQDN covered by that cert), not this value."
+  description = "Certificate identity for the Standalone Red5 Pro server: the certbot domain when https_ssl_certificate=letsencrypt, and the FQDN in the HTTPS URL outputs. Wildcards (e.g. *.example.com) are only valid with https_ssl_certificate=imported - Let's Encrypt here uses HTTP-01, which cannot issue a wildcard. For cluster/autoscale this value is not the certificate subject: Traefik and the ACME challenge use stream_manager_public_hostname (TRAEFIK_HOST) instead."
   type        = string
   default     = ""
 }
@@ -737,7 +737,7 @@ variable "stream_manager_version" {
   default     = "latest"
 }
 variable "stream_manager_public_hostname" {
-  description = "Public FQDN for Stream Manager 2.0 (cluster/autoscale): TRAEFIK_HOST, admin UI API base, stream_manager_url_https, etc. Must be a real hostname (e.g. sm.example.com), not a wildcard. https_ssl_certificate_domain_name may still be *.example.com if this host is under that zone."
+  description = "Public FQDN for Stream Manager 2.0 (cluster/autoscale): TRAEFIK_HOST, admin UI API base, stream_manager_url_https, etc. Must be a real hostname (e.g. sm.example.com), not a wildcard. It is also the certificate subject - with letsencrypt the ACME challenge is issued for this hostname, and with imported the certificate must cover it."
   type        = string
   default     = ""
 }

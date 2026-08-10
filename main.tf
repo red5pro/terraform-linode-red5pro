@@ -432,7 +432,6 @@ resource "null_resource" "red5pro_sm" {
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE=true",
       "export KAFKA_REPLICAS='${local.kafka_on_sm_replicas}'",
-      "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
       "export CONTAINER_REGISTRY='${var.stream_manager_container_registry}'",
       "export CONTAINER_REGISTRY_USER='${var.stream_manager_container_registry_user}'",
       "export CONTAINER_REGISTRY_PASSWORD='${var.stream_manager_container_registry_password}'",
@@ -515,6 +514,13 @@ resource "linode_nodebalancer" "red5pro_lb" {
   count  = local.autoscale ? 1 : 0
   label  = "${var.name}-sm2-lb"
   region = var.linode_region
+
+  lifecycle {
+    precondition {
+      condition     = var.https_ssl_certificate != "letsencrypt"
+      error_message = "ERROR! https_ssl_certificate=letsencrypt is not supported for type=autoscale - the Linode NodeBalancer only gets a port 443 configuration when https_ssl_certificate=imported. The ACME challenge cannot reach Stream Manager through the load balancer."
+    }
+  }
 }
 
 resource "linode_nodebalancer_config" "red5pro_lbconfig_http" {
