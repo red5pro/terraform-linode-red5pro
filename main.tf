@@ -1,26 +1,26 @@
 locals {
-  standalone                    = var.type == "standalone" ? true : false
-  cluster                       = var.type == "cluster" ? true : false
-  autoscale                     = var.type == "autoscale" ? true : false
-  cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
-  vpc_name                      = var.vpc_use_existing ? data.linode_vpcs.existing_vpc[0].vpcs[0].label : linode_vpc.red5_vpc[0].label
-  subnet_name                   = var.vpc_use_existing ? data.linode_vpc_subnets.existing_subnet[0].vpc_subnets[0].label : linode_vpc_subnet.red5_subnet[0].label
-  subnet_id                     = var.vpc_use_existing ? data.linode_vpc_subnets.existing_subnet[0].vpc_subnets[0].id : linode_vpc_subnet.red5_subnet[0].id
-  stream_manager_ip             = local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? tolist(linode_instance.red5pro_sm[0].ipv4)[0] : ""
-  stream_manager_count          = local.autoscale ? var.stream_manager_count : local.cluster ? 1 : 0
-  ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
-  ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
-  ssh_public_key                = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].ssh_key : linode_sshkey.node_ssh_key[0].ssh_key
-  ssh_key_name                  = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].label : linode_sshkey.node_ssh_key[0].label
-  kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
-  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? tolist(linode_instance.red5pro_kafka[0].ipv4)[0] : tolist(linode_instance.red5pro_sm[0].ipv4)[0] : "null"
-  kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
-  kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
-  kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
-  kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
-  stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
-  red5pro_node_image_name       = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
+  standalone                       = var.type == "standalone"
+  cluster                          = var.type == "cluster"
+  autoscale                        = var.type == "autoscale"
+  cluster_or_autoscale             = local.cluster || local.autoscale
+  vpc_name                         = var.vpc_use_existing ? data.linode_vpcs.existing_vpc[0].vpcs[0].label : linode_vpc.red5_vpc[0].label
+  subnet_name                      = var.vpc_use_existing ? data.linode_vpc_subnets.existing_subnet[0].vpc_subnets[0].label : linode_vpc_subnet.red5_subnet[0].label
+  subnet_id                        = var.vpc_use_existing ? data.linode_vpc_subnets.existing_subnet[0].vpc_subnets[0].id : linode_vpc_subnet.red5_subnet[0].id
+  stream_manager_ip                = local.autoscale ? linode_nodebalancer.red5pro_lb[0].ipv4 : local.cluster ? tolist(linode_instance.red5pro_sm[0].ipv4)[0] : ""
+  stream_manager_count             = local.autoscale ? var.stream_manager_count : local.cluster ? 1 : 0
+  ssh_private_key_path             = var.ssh_key_use_existing ? var.ssh_key_existing_private_key_path : local_file.red5pro_ssh_key_pem[0].filename
+  ssh_private_key                  = var.ssh_key_use_existing ? file(var.ssh_key_existing_private_key_path) : tls_private_key.red5pro_ssh_key[0].private_key_pem
+  ssh_public_key                   = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].ssh_key : linode_sshkey.node_ssh_key[0].ssh_key
+  ssh_key_name                     = var.ssh_key_use_existing ? data.linode_sshkey.node_ssh_key[0].label : linode_sshkey.node_ssh_key[0].label
+  kafka_standalone_instance        = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
+  kafka_ip                         = local.cluster_or_autoscale ? local.kafka_standalone_instance ? tolist(linode_instance.red5pro_kafka[0].ipv4)[0] : tolist(linode_instance.red5pro_sm[0].ipv4)[0] : "null"
+  kafka_on_sm_replicas             = local.kafka_standalone_instance ? 0 : 1
+  kafka_ssl_keystore_key           = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
+  kafka_ssl_truststore_cert        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
+  kafka_ssl_keystore_cert_chain    = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
+  stream_manager_ssl               = local.autoscale ? "none" : var.https_ssl_certificate
+  stream_manager_url               = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
+  red5pro_node_image_name          = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
   red5pro_node_security_group_name = local.cluster_or_autoscale ? linode_firewall.node_firewall[0].label : ""
 }
 
@@ -49,14 +49,14 @@ resource "local_file" "red5pro_ssh_key_pub" {
 }
 
 resource "linode_sshkey" "node_ssh_key" {
-  count    = var.ssh_key_use_existing ? 0 : 1
-  label    = "ssh-key-${var.name}"
-  ssh_key  = replace(tls_private_key.red5pro_ssh_key[0].public_key_openssh, "\n", "")
+  count   = var.ssh_key_use_existing ? 0 : 1
+  label   = "ssh-key-${var.name}"
+  ssh_key = replace(tls_private_key.red5pro_ssh_key[0].public_key_openssh, "\n", "")
 }
 
 data "linode_sshkey" "node_ssh_key" {
-  count    = var.ssh_key_use_existing ? 1 : 0
-  label    = var.ssh_key_name_existing
+  count = var.ssh_key_use_existing ? 1 : 0
+  label = var.ssh_key_name_existing
 }
 
 ################################################################################
@@ -70,49 +70,42 @@ resource "random_password" "ssl_password_red5pro_standalone" {
 }
 
 resource "linode_instance" "standalone_instance" {
-    count           = local.standalone ? 1 : 0
-    label           = "${var.name}-standalone-server"
-    image           = "linode/ubuntu${var.ubuntu_version}"
-    region          = var.linode_region
-    type            = var.standalone_red5pro_instance_type
-    authorized_keys = [replace(local.ssh_public_key, "\n", "")]
+  count           = local.standalone ? 1 : 0
+  label           = "${var.name}-standalone-server"
+  image           = "linode/ubuntu${var.ubuntu_version}"
+  region          = var.linode_region
+  type            = var.standalone_red5pro_instance_type
+  authorized_keys = [replace(local.ssh_public_key, "\n", "")]
 
-    interface {
-        purpose = "public"
-    }
+  interface {
+    purpose = "public"
+  }
 
-    interface {
-        purpose   = "vpc"
-        subnet_id = local.subnet_id
-    }
+  interface {
+    purpose   = "vpc"
+    subnet_id = local.subnet_id
+  }
 
-    tags       = ["test"]
+  tags = ["test"]
 
-    provisioner "file" {
+  connection {
+    host        = tolist(self.ipv4)[0]
+    type        = "ssh"
+    user        = "root"
+    private_key = local.ssh_private_key
+  }
+
+  provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/root"
-
-    connection {
-      host        = tolist(self.ipv4)[0]
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
   }
 
-    provisioner "file" {
+  provisioner "file" {
     source      = var.path_to_red5pro_build
     destination = "/root/red5pro-installer/${basename(var.path_to_red5pro_build)}"
-
-    connection {
-      host        = tolist(self.ipv4)[0]
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
   }
 
-    provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = [
       "sudo cloud-init status --wait",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
@@ -135,8 +128,8 @@ resource "linode_instance" "standalone_instance" {
       "sudo -E /root/red5pro-installer/r5p_config_node_apps_plugins.sh",
       "sudo systemctl daemon-reload && sudo systemctl start red5pro",
       "sudo mkdir -p /usr/local/red5pro/certs",
-      "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem",
-      "echo '${try(file(var.https_ssl_certificate_key_path), "")}' | sudo tee -a /usr/local/red5pro/certs/privkey.pem",
+      "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem >/dev/null",
+      "echo '${try(file(var.https_ssl_certificate_key_path), "")}' | sudo tee -a /usr/local/red5pro/certs/privkey.pem >/dev/null",
       "export SSL='${var.https_ssl_certificate}'",
       "export SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
       "export SSL_MAIL='${var.https_ssl_certificate_email}'",
@@ -145,12 +138,6 @@ resource "linode_instance" "standalone_instance" {
       "nohup sudo -E /root/red5pro-installer/r5p_ssl_check_install.sh >> /root/red5pro-installer/r5p_ssl_check_install.log &",
       "sleep 2"
     ]
-    connection {
-      host        = tolist(self.ipv4)[0]
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
   }
 }
 
@@ -236,10 +223,10 @@ resource "tls_self_signed_cert" "ca_cert" {
 
 # Create CSR for server certificate 
 resource "tls_cert_request" "kafka_server_csr" {
-  count            = local.cluster_or_autoscale ? 1 : 0
-  private_key_pem  = tls_private_key.kafka_server_key[0].private_key_pem
-  ip_addresses     = [local.kafka_ip]
-  dns_names        = ["kafka0"]
+  count           = local.cluster_or_autoscale ? 1 : 0
+  private_key_pem = tls_private_key.kafka_server_key[0].private_key_pem
+  ip_addresses    = [local.kafka_ip]
+  dns_names       = ["kafka0"]
 
   subject {
     country             = "US"
@@ -261,7 +248,7 @@ resource "tls_locally_signed_cert" "kafka_server_cert" {
   # CA certificate
   ca_cert_pem = tls_self_signed_cert.ca_cert[0].cert_pem
 
-  validity_period_hours = 1 * 365 * 24
+  validity_period_hours = 365 * 24
 
   allowed_uses = [
     "digital_signature",
@@ -311,13 +298,13 @@ resource "null_resource" "red5pro_kafka" {
   count = local.kafka_standalone_instance ? 1 : 0
 
   provisioner "remote-exec" {
-    inline = [     
+    inline = [
       "sudo cloud-init status --wait",
-      "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /root/red5pro-installer/server.properties",
-      "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /root/red5pro-installer/server.properties",
-      "echo 'ssl.keystore.certificate.chain=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /root/red5pro-installer/server.properties",
-      "echo 'listener.name.broker.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /root/red5pro-installer/server.properties",
-      "echo 'listener.name.controller.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /root/red5pro-installer/server.properties",
+      "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /root/red5pro-installer/server.properties >/dev/null",
+      "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /root/red5pro-installer/server.properties >/dev/null",
+      "echo 'ssl.keystore.certificate.chain=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /root/red5pro-installer/server.properties >/dev/null",
+      "echo 'listener.name.broker.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /root/red5pro-installer/server.properties >/dev/null",
+      "echo 'listener.name.controller.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /root/red5pro-installer/server.properties >/dev/null",
       "echo 'advertised.listeners=BROKER://${local.kafka_ip}:9092' | sudo tee -a /root/red5pro-installer/server.properties",
       "export KAFKA_ARCHIVE_URL='${var.kafka_standalone_instance_arhive_url}'",
       "export KAFKA_CLUSTER_ID='${random_id.kafka_cluster_id[0].b64_std}'",
@@ -350,7 +337,7 @@ resource "random_password" "r5as_auth_secret" {
 
 resource "linode_instance" "red5pro_sm" {
   count           = local.stream_manager_count
-  label           = local.stream_manager_count == 1 ? "${var.name}-sm2" : "${var.name}-sm2-${count.index+1}"
+  label           = local.stream_manager_count == 1 ? "${var.name}-sm2" : "${var.name}-sm2-${count.index + 1}"
   image           = "linode/ubuntu${var.ubuntu_version}"
   region          = var.linode_region
   type            = var.stream_manager_instance_type
@@ -365,19 +352,19 @@ resource "linode_instance" "red5pro_sm" {
     subnet_id = local.subnet_id
   }
 
-    tags       = ["test"]
-    private_ip = true
+  tags       = ["test"]
+  private_ip = true
+
+  connection {
+    host        = tolist(self.ipv4)[0]
+    type        = "ssh"
+    user        = "root"
+    private_key = local.ssh_private_key
+  }
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/root"
-
-    connection {
-      host        = tolist(self.ipv4)[0]
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
   }
 
   provisioner "remote-exec" {
@@ -390,7 +377,7 @@ resource "linode_instance" "red5pro_sm" {
       "sudo echo '${try(file(var.https_ssl_certificate_key_path), "")}' > /usr/local/stream-manager/certs/privkey.pem",
       # Create .env file with environment variables
       "cat >> /usr/local/stream-manager/.env <<- EOM",
-      "R5AS_GROUP_INSTANCE_ID=${count.index+1}",
+      "R5AS_GROUP_INSTANCE_ID=${count.index + 1}",
       "KAFKA_CLUSTER_ID=${random_id.kafka_cluster_id[0].b64_std}",
       "KAFKA_ADMIN_USERNAME=${random_string.kafka_admin_username[0].result}",
       "KAFKA_ADMIN_PASSWORD=${random_id.kafka_admin_password[0].id}",
@@ -416,36 +403,35 @@ resource "linode_instance" "red5pro_sm" {
       "TRAEFIK_CMD=${local.stream_manager_ssl == "imported" ? "--providers.file.filename=/scripts/traefik.yaml" : ""}",
       "EOM"
     ]
-    connection {
-      host        = tolist(self.ipv4)[0]
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
   }
 }
 
 resource "null_resource" "red5pro_sm" {
-  count  = local.stream_manager_count
+  count = local.stream_manager_count
 
   provisioner "remote-exec" {
     inline = [
       "sudo cloud-init status --wait",
-      "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${tolist(linode_instance.red5pro_sm[count.index].ipv4)[0]}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_HOST=${var.stream_manager_public_hostname}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'AS_ADMIN_UI_VERSION=${var.stream_manager_admin_ui_version}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'AS_ADMIN_UI_MAIN_REGION=${var.linode_region}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'AS_ADMIN_UI_LINODE_VPC=${local.vpc_name}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'AS_ADMIN_UI_LINODE_SECURITY_GROUP=${local.red5pro_node_security_group_name}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env >/dev/null",
+      "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env >/dev/null",
+      "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env >/dev/null",
+      <<-EOT
+      sudo tee -a /usr/local/stream-manager/.env <<'EOM'
+      KAFKA_REPLICAS=${local.kafka_on_sm_replicas}
+      KAFKA_IP=${local.kafka_ip}
+      TRAEFIK_IP=${tolist(linode_instance.red5pro_sm[count.index].ipv4)[0]}
+      TRAEFIK_HOST=${var.stream_manager_public_hostname}
+      AS_ADMIN_UI_VERSION=${var.stream_manager_version}
+      AS_ADMIN_UI_MAIN_REGION=${var.linode_region}
+      AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}
+      AS_ADMIN_UI_LINODE_VPC=${local.vpc_name}
+      AS_ADMIN_UI_LINODE_SECURITY_GROUP=${local.red5pro_node_security_group_name}
+      EOM
+      EOT
+      ,
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE=true",
-      "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
+      "export KAFKA_REPLICAS='${local.kafka_on_sm_replicas}'",
       "export CONTAINER_REGISTRY='${var.stream_manager_container_registry}'",
       "export CONTAINER_REGISTRY_USER='${var.stream_manager_container_registry_user}'",
       "export CONTAINER_REGISTRY_PASSWORD='${var.stream_manager_container_registry_password}'",
@@ -489,31 +475,24 @@ resource "linode_instance" "red5pro_node" {
   tags       = ["test"]
   private_ip = true
 
+  connection {
+    host        = tolist(self.ipv4)[0]
+    type        = "ssh"
+    user        = "root"
+    private_key = local.ssh_private_key
+  }
+
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/root"
-
-    connection {
-      host        = tolist(self.ipv4)[0]
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
   }
 
   provisioner "file" {
     source      = var.path_to_red5pro_build
     destination = "/root/red5pro-installer/${basename(var.path_to_red5pro_build)}"
-
-    connection {
-      host        = tolist(self.ipv4)[0]
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
   }
 
-    provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = [
       "sudo cloud-init status --wait",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
@@ -524,12 +503,6 @@ resource "linode_instance" "red5pro_node" {
       "sudo -E /root/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /root/red5pro-installer/r5p_config_node.sh",
     ]
-    connection {
-      host        = tolist(self.ipv4)[0]
-      type        = "ssh"
-      user        = "root"
-      private_key = local.ssh_private_key
-    }
   }
 }
 
@@ -538,31 +511,38 @@ resource "linode_instance" "red5pro_node" {
 ################################################################################
 
 resource "linode_nodebalancer" "red5pro_lb" {
-    count     = local.autoscale ? 1 : 0
-    label     = "${var.name}-sm2-lb"
-    region    = var.linode_region
+  count  = local.autoscale ? 1 : 0
+  label  = "${var.name}-sm2-lb"
+  region = var.linode_region
+
+  lifecycle {
+    precondition {
+      condition     = var.https_ssl_certificate != "letsencrypt"
+      error_message = "ERROR! https_ssl_certificate=letsencrypt is not supported for type=autoscale - the Linode NodeBalancer only gets a port 443 configuration when https_ssl_certificate=imported. The ACME challenge cannot reach Stream Manager through the load balancer."
+    }
+  }
 }
 
-resource "linode_nodebalancer_config" "red5pro_lbconfig_http"{
-    count           = local.autoscale && var.https_ssl_certificate == "none" ? 1 : 0
-    nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
-    port            = 80
-    protocol        = "http"
-    check           = "http"
-    check_path      = "/as/v1/admin/healthz"    
-    algorithm       = "roundrobin"
+resource "linode_nodebalancer_config" "red5pro_lbconfig_http" {
+  count           = local.autoscale && var.https_ssl_certificate == "none" ? 1 : 0
+  nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
+  port            = 80
+  protocol        = "http"
+  check           = "http"
+  check_path      = "/as/v1/admin/healthz"
+  algorithm       = "roundrobin"
 }
 
-resource "linode_nodebalancer_config" "red5pro_lbconfig_https"{
-    count           = local.autoscale && var.https_ssl_certificate == "imported" ? 1 : 0
-    nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
-    port            = 443
-    protocol        = "https"
-    check           = "http"
-    check_path      = "/as/v1/admin/healthz"
-    ssl_cert        = file(var.https_ssl_certificate_cert_path)
-    ssl_key         = file(var.https_ssl_certificate_key_path)
-    algorithm       = "roundrobin"
+resource "linode_nodebalancer_config" "red5pro_lbconfig_https" {
+  count           = local.autoscale && var.https_ssl_certificate == "imported" ? 1 : 0
+  nodebalancer_id = linode_nodebalancer.red5pro_lb[0].id
+  port            = 443
+  protocol        = "https"
+  check           = "http"
+  check_path      = "/as/v1/admin/healthz"
+  ssl_cert        = file(var.https_ssl_certificate_cert_path)
+  ssl_key         = file(var.https_ssl_certificate_key_path)
+  algorithm       = "roundrobin"
 }
 
 ####################################################################################################
@@ -606,11 +586,11 @@ resource "random_id" "node_image_suffix" {
 
 # Node - Create image (Linode Custom Images)
 resource "linode_image" "red5pro_node_image" {
-  count       = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
-  label       = local.red5pro_node_image_name
-  disk_id     = linode_instance.red5pro_node[0].disk[0].id
-  linode_id   = linode_instance.red5pro_node[0].id
-  depends_on  = [linode_instance.red5pro_node]
+  count      = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
+  label      = local.red5pro_node_image_name
+  disk_id    = linode_instance.red5pro_node[0].disk[0].id
+  linode_id  = linode_instance.red5pro_node[0].id
+  depends_on = [linode_instance.red5pro_node]
   lifecycle {
     ignore_changes = [label]
   }
@@ -627,72 +607,63 @@ resource "time_sleep" "wait_for_delete_nodegroup" {
     linode_instance.red5pro_sm[0],
     linode_instance.red5pro_kafka[0],
   ]
-  destroy_duration = "90s"
+  destroy_duration = "120s"
 }
 
 resource "null_resource" "node_group" {
   count = local.cluster_or_autoscale && var.node_group_create ? 1 : 0
   triggers = {
     trigger_name   = "node-group-trigger"
-    SM_IP          = "${local.stream_manager_ip}"
-    R5AS_AUTH_USER = "${var.stream_manager_auth_user}"
-    R5AS_AUTH_PASS = "${var.stream_manager_auth_password}"
+    SM_IP          = local.stream_manager_ip
+    R5AS_AUTH_USER = var.stream_manager_auth_user
+    R5AS_AUTH_PASS = var.stream_manager_auth_password
   }
   provisioner "local-exec" {
     when    = create
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_create_node_group.sh"
     environment = {
-      SM_IP                                          = "${local.stream_manager_ip}"
-      NODE_GROUP_NAME                                = "${substr(var.name, 0, 16)}"
-      R5AS_AUTH_USER                                 = "${var.stream_manager_auth_user}"
-      R5AS_AUTH_PASS                                 = "${var.stream_manager_auth_password}"
+      SM_IP                                          = local.stream_manager_ip
+      NODE_GROUP_NAME                                = substr(var.name, 0, 16)
+      R5AS_AUTH_USER                                 = var.stream_manager_auth_user
+      R5AS_AUTH_PASS                                 = var.stream_manager_auth_password
       NODE_GROUP_CLOUD_PLATFORM                      = "LINODE"
-      NODE_GROUP_REGIONS                             = "${var.linode_region}"
-      NODE_GROUP_ENVIRONMENT                         = "${var.name}"
-      NODE_GROUP_VPC_NAME                            = "${local.vpc_name}"
-      NODE_GROUP_SECURITY_GROUP_NAME                 = "${linode_firewall.node_firewall[0].label}"
-      NODE_GROUP_IMAGE_NAME                          = "${linode_image.red5pro_node_image[0].label}"
-      NODE_GROUP_ORIGINS_MIN                         = "${var.node_group_origins_min}"
-      NODE_GROUP_ORIGINS_MAX                         = "${var.node_group_origins_max}"
-      NODE_GROUP_ORIGIN_INSTANCE_TYPE                = "${var.node_group_origins_instance_type}"
-      NODE_GROUP_ORIGIN_VOLUME_SIZE                  = "${var.node_group_origins_volume_size}"
-      NODE_GROUP_ORIGINS_CONNECTION_LIMIT            = "${var.node_group_origins_connection_limit}"
-      NODE_GROUP_EDGES_MIN                           = "${var.node_group_edges_min}"
-      NODE_GROUP_EDGES_MAX                           = "${var.node_group_edges_max}"
-      NODE_GROUP_EDGE_INSTANCE_TYPE                  = "${var.node_group_edges_instance_type}"
-      NODE_GROUP_EDGE_VOLUME_SIZE                    = "${var.node_group_edges_volume_size}"
-      NODE_GROUP_EDGES_CONNECTION_LIMIT              = "${var.node_group_edges_connection_limit}"
-      NODE_GROUP_TRANSCODERS_MIN                     = "${var.node_group_transcoders_min}"
-      NODE_GROUP_TRANSCODERS_MAX                     = "${var.node_group_transcoders_max}"
-      NODE_GROUP_TRANSCODER_INSTANCE_TYPE            = "${var.node_group_transcoders_instance_type}"
-      NODE_GROUP_TRANSCODER_VOLUME_SIZE              = "${var.node_group_transcoders_volume_size}"
-      NODE_GROUP_TRANSCODERS_CONNECTION_LIMIT        = "${var.node_group_transcoders_connection_limit}"
-      NODE_GROUP_RELAYS_MIN                          = "${var.node_group_relays_min}"
-      NODE_GROUP_RELAYS_MAX                          = "${var.node_group_relays_max}"
-      NODE_GROUP_RELAY_INSTANCE_TYPE                 = "${var.node_group_relays_instance_type}"
-      NODE_GROUP_RELAY_VOLUME_SIZE                   = "${var.node_group_relays_volume_size}"
-      NODE_GROUP_ROUND_TRIP_AUTH_ENABLE              = "${var.node_config_round_trip_auth.enable}"
-      NODE_GROUP_ROUNT_TRIP_AUTH_TARGET_NODES        = "${join(",", var.node_config_round_trip_auth.target_nodes)}"
-      NODE_GROUP_ROUND_TRIP_AUTH_HOST                = "${var.node_config_round_trip_auth.auth_host}"
-      NODE_GROUP_ROUND_TRIP_AUTH_PORT                = "${var.node_config_round_trip_auth.auth_port}"
-      NODE_GROUP_ROUND_TRIP_AUTH_PROTOCOL            = "${var.node_config_round_trip_auth.auth_protocol}"
-      NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE   = "${var.node_config_round_trip_auth.auth_endpoint_validate}"
-      NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE = "${var.node_config_round_trip_auth.auth_endpoint_invalidate}"
-      NODE_GROUP_WEBHOOK_ENABLE                      = "${var.node_config_webhooks.enable}"
-      NODE_GROUP_WEBHOOK_TARGET_NODES                = "${join(",", var.node_config_webhooks.target_nodes)}"
-      NODE_GROUP_WEBHOOK_ENDPOINT                    = "${var.node_config_webhooks.webhook_endpoint}"
-      NODE_GROUP_SOCIAL_PUSHER_ENABLE                = "${var.node_config_social_pusher.enable}"
-      NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES          = "${join(",", var.node_config_social_pusher.target_nodes)}"
-      NODE_GROUP_RESTREAMER_ENABLE                   = "${var.node_config_restreamer.enable}"
-      NODE_GROUP_RESTREAMER_TARGET_NODES             = "${join(",", var.node_config_restreamer.target_nodes)}"
-      NODE_GROUP_RESTREAMER_TSINGEST                 = "${var.node_config_restreamer.restreamer_tsingest}"
-      NODE_GROUP_RESTREAMER_IPCAM                    = "${var.node_config_restreamer.restreamer_ipcam}"
-      NODE_GROUP_RESTREAMER_WHIP                     = "${var.node_config_restreamer.restreamer_whip}"
-      NODE_GROUP_RESTREAMER_SRTINGEST                = "${var.node_config_restreamer.restreamer_srtingest}"
+      NODE_GROUP_REGIONS                             = var.linode_region
+      NODE_GROUP_ENVIRONMENT                         = var.name
+      NODE_GROUP_VPC_NAME                            = local.vpc_name
+      NODE_GROUP_SECURITY_GROUP_NAME                 = linode_firewall.node_firewall[0].label
+      NODE_GROUP_IMAGE_NAME                          = linode_image.red5pro_node_image[0].label
+      NODE_GROUP_ORIGINS_MIN                         = var.node_group_origins_min
+      NODE_GROUP_ORIGINS_MAX                         = var.node_group_origins_max
+      NODE_GROUP_ORIGIN_INSTANCE_TYPE                = var.node_group_origins_instance_type
+      NODE_GROUP_ORIGIN_VOLUME_SIZE                  = var.node_group_origins_volume_size
+      NODE_GROUP_EDGES_MIN                           = var.node_group_edges_min
+      NODE_GROUP_EDGES_MAX                           = var.node_group_edges_max
+      NODE_GROUP_EDGE_INSTANCE_TYPE                  = var.node_group_edges_instance_type
+      NODE_GROUP_EDGE_VOLUME_SIZE                    = var.node_group_edges_volume_size
+      NODE_GROUP_TRANSCODERS_MIN                     = var.node_group_transcoders_min
+      NODE_GROUP_TRANSCODERS_MAX                     = var.node_group_transcoders_max
+      NODE_GROUP_TRANSCODER_INSTANCE_TYPE            = var.node_group_transcoders_instance_type
+      NODE_GROUP_TRANSCODER_VOLUME_SIZE              = var.node_group_transcoders_volume_size
+      NODE_GROUP_RELAYS_MIN                          = var.node_group_relays_min
+      NODE_GROUP_RELAYS_MAX                          = var.node_group_relays_max
+      NODE_GROUP_RELAY_INSTANCE_TYPE                 = var.node_group_relays_instance_type
+      NODE_GROUP_RELAY_VOLUME_SIZE                   = var.node_group_relays_volume_size
+      NODE_GROUP_ROUND_TRIP_AUTH_ENABLE              = var.node_config_round_trip_auth.enable
+      NODE_GROUP_ROUNT_TRIP_AUTH_TARGET_NODES        = join(",", var.node_config_round_trip_auth.target_nodes)
+      NODE_GROUP_ROUND_TRIP_AUTH_HOST                = var.node_config_round_trip_auth.auth_host
+      NODE_GROUP_ROUND_TRIP_AUTH_PORT                = var.node_config_round_trip_auth.auth_port
+      NODE_GROUP_ROUND_TRIP_AUTH_PROTOCOL            = var.node_config_round_trip_auth.auth_protocol
+      NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE   = var.node_config_round_trip_auth.auth_endpoint_validate
+      NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE = var.node_config_round_trip_auth.auth_endpoint_invalidate
+      NODE_GROUP_WEBHOOK_ENABLE                      = var.node_config_webhooks.enable
+      NODE_GROUP_WEBHOOK_TARGET_NODES                = join(",", var.node_config_webhooks.target_nodes)
+      NODE_GROUP_WEBHOOK_ENDPOINT                    = var.node_config_webhooks.webhook_endpoint
+      NODE_GROUP_SOCIAL_PUSHER_ENABLE                = var.node_config_social_pusher.enable
+      NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES          = join(",", var.node_config_social_pusher.target_nodes)
     }
   }
 
-    provisioner "local-exec" {
+  provisioner "local-exec" {
     when    = destroy
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_delete_node_group.sh '${self.triggers.SM_IP}' '${self.triggers.R5AS_AUTH_USER}' '${self.triggers.R5AS_AUTH_PASS}'"
   }

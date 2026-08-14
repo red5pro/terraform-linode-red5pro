@@ -167,7 +167,7 @@ output "module_output" {
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Stream Manager 2.0 cluster with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-Set **`stream_manager_public_hostname`** to the DNS name clients use for Stream Manager (e.g. `sm.example.com`). It configures Traefik, the admin UI API base URL, and outputs such as `stream_manager_url_https`. Use a real FQDN, not a wildcard. **`https_ssl_certificate_domain_name`** is separate: it identifies the TLS certificate (and may be a wildcard like `*.example.com` or an ACM primary name) as long as the cert covers `stream_manager_public_hostname`.
+Set **`stream_manager_public_hostname`** to the DNS name clients use for Stream Manager (e.g. `sm.example.com`). It configures Traefik, the admin UI API base URL, and outputs such as `stream_manager_url_https`. Use a real FQDN, not a wildcard. It is also the certificate subject: with `letsencrypt` the ACME challenge is issued for this hostname, and with `imported` the certificate you supply must cover it. **`https_ssl_certificate_domain_name`** is not used for cluster deployments.
 
 #### Terraform Deployed Resources (cluster)
 
@@ -252,12 +252,10 @@ module "red5pro" {
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
   # https_ssl_certificate             = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Cert domain name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_email       = "email@example.com"    # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Cert domain name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 
@@ -282,15 +280,6 @@ module "red5pro" {
     auth_endpoint_validate   = "/validateCredentials",
     auth_endpoint_invalidate = "/invalidateCredentials"
   }
-  # Restreamer configuration - (Optional) https://www.red5.net/docs/special/restreamer/overview/
-  node_config_restreamer = {
-    enable               = false,
-    target_nodes         = ["origin", "transcoder"],
-    restreamer_tsingest  = true,
-    restreamer_ipcam     = true,
-    restreamer_whip      = true,
-    restreamer_srtingest = true
-  }
   # Social Pusher configuration - (Optional) https://www.red5.net/docs/development/social-media-plugin/rest-api/
   node_config_social_pusher = {
     enable       = false,
@@ -303,17 +292,14 @@ module "red5pro" {
   node_group_origins_max               = 20                        # Number of maximum Origins
   node_group_origins_instance_type     = "g6-dedicated-2"          # Origins Linode Instance Type
   node_group_origins_volume_size       = 50                        # Volume size in GB for Origins
-  node_group_origins_connection_limit  = 20                        # Maximum number of publishers to the origin server
   node_group_edges_min                 = 1                         # Number of minimum Edges
   node_group_edges_max                 = 40                        # Number of maximum Edges
   node_group_edges_instance_type       = "g6-dedicated-2"          # Edges Linode Instance Type
   node_group_edges_volume_size         = 50                        # Volume size in GB for Edges
-  node_group_edges_connection_limit    = 200                       # Maximum number of subscribers to the edge server
   node_group_transcoders_min           = 0                         # Number of minimum Transcoders
   node_group_transcoders_max           = 20                        # Number of maximum Transcoders
   node_group_transcoders_instance_type = "g6-dedicated-2"          # Transcoders Linode Instance Type
   node_group_transcoders_volume_size   = 50                        # Volume size in GB for Transcoders
-  node_group_transcoders_connection_limit = 20                     # Maximum number of publishers to the transcoder server
   node_group_relays_min                = 0                         # Number of minimum Relays
   node_group_relays_max                = 20                        # Number of maximum Relays
   node_group_relays_instance_type      = "g6-dedicated-2"          # Relays Linode Instance Type
@@ -329,7 +315,7 @@ output "module_output" {
 
 In the following example, Terraform module will automates the infrastructure provisioning of the Autoscale Stream Managers 2.0 with Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
-Set **`stream_manager_public_hostname`** to the DNS name clients use (e.g. `sm.example.com`); point DNS at the load balancer hostname from outputs. It configures Traefik, the admin UI, and `stream_manager_url_https`. Use a concrete FQDN, not a wildcard. **`https_ssl_certificate_domain_name`** selects the ACM / TLS identity and may be a wildcard if it covers this hostname.
+Set **`stream_manager_public_hostname`** to the DNS name clients use (e.g. `sm.example.com`); point DNS at the load balancer hostname from outputs. It configures Traefik, the admin UI, and `stream_manager_url_https`. Use a concrete FQDN, not a wildcard. TLS is terminated on the NodeBalancer, so only `https_ssl_certificate = "imported"` is supported here - `letsencrypt` is rejected by a precondition. **`https_ssl_certificate_domain_name`** is not used for autoscale deployments.
 
 #### Terraform Deployed Resources (autoscale)
 
@@ -416,7 +402,6 @@ module "red5pro" {
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"              # Cert domain name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"  # Path to certificate fullchain file
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"     # Path to certificate privkey file
 
@@ -442,15 +427,6 @@ module "red5pro" {
     auth_endpoint_validate   = "/validateCredentials",
     auth_endpoint_invalidate = "/invalidateCredentials"
   }
-  # Restreamer configuration - (Optional) https://www.red5.net/docs/special/restreamer/overview/
-  node_config_restreamer = {
-    enable               = false,
-    target_nodes         = ["origin", "transcoder"],
-    restreamer_tsingest  = true,
-    restreamer_ipcam     = true,
-    restreamer_whip      = true,
-    restreamer_srtingest = true
-  }
   # Social Pusher configuration - (Optional) https://www.red5.net/docs/development/social-media-plugin/rest-api/
   node_config_social_pusher = {
     enable       = false,
@@ -463,17 +439,14 @@ module "red5pro" {
   node_group_origins_max               = 20                        # Number of maximum Origins
   node_group_origins_instance_type     = "g6-dedicated-2"          # Origins Linode Instance Type
   node_group_origins_volume_size       = 50                        # Volume size in GB for Origins
-  node_group_origins_connection_limit  = 20                        # Maximum number of publishers to the origin server
   node_group_edges_min                 = 1                         # Number of minimum Edges
   node_group_edges_max                 = 40                        # Number of maximum Edges
   node_group_edges_instance_type       = "g6-dedicated-2"          # Edges Linode Instance Type
   node_group_edges_volume_size         = 50                        # Volume size in GB for Edges
-  node_group_edges_connection_limit    = 200                       # Maximum number of subscribers to the edge server
   node_group_transcoders_min           = 0                         # Number of minimum Transcoders
   node_group_transcoders_max           = 20                        # Number of maximum Transcoders
   node_group_transcoders_instance_type = "g6-dedicated-2"          # Transcoders Linode Instance Type
   node_group_transcoders_volume_size   = 50                        # Volume size in GB for Transcoders
-  node_group_transcoders_connection_limit = 20                     # Maximum number of publishers to the transcoder server
   node_group_relays_min                = 0                         # Number of minimum Relays
   node_group_relays_max                = 20                        # Number of maximum Relays
   node_group_relays_instance_type      = "g6-dedicated-2"          # Relays Linode Instance Type
