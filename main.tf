@@ -335,6 +335,14 @@ resource "random_password" "r5as_auth_secret" {
   special = false
 }
 
+# Generate the AS-Admin secrets store encryption key once. For type=autoscale,
+# stream_manager_count can be > 1 independent instances that share one Kafka-backed
+# secret store, so all of them must decrypt with the same key.
+resource "random_id" "r5as_secrets_key" {
+  count       = local.cluster_or_autoscale ? 1 : 0
+  byte_length = 32
+}
+
 resource "linode_instance" "red5pro_sm" {
   count           = local.stream_manager_count
   label           = local.stream_manager_count == 1 ? "${var.name}-sm2" : "${var.name}-sm2-${count.index + 1}"
@@ -375,6 +383,8 @@ resource "linode_instance" "red5pro_sm" {
       # Write certificate and key files
       "sudo echo '${try(file(var.https_ssl_certificate_cert_path), "")}' > /usr/local/stream-manager/certs/cert.pem",
       "sudo echo '${try(file(var.https_ssl_certificate_key_path), "")}' > /usr/local/stream-manager/certs/privkey.pem",
+      "sudo echo '${random_id.r5as_secrets_key[0].b64_std}' > /usr/local/stream-manager/keys/r5as-secrets.key",
+      "sudo chmod 400 /usr/local/stream-manager/keys/r5as-secrets.key",
       # Create .env file with environment variables
       "cat >> /usr/local/stream-manager/.env <<- EOM",
       "R5AS_GROUP_INSTANCE_ID=${count.index + 1}",
