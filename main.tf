@@ -126,7 +126,7 @@ resource "linode_instance" "standalone_instance" {
       "sudo chmod +x /root/red5pro-installer/*.sh",
       "sudo -E /root/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /root/red5pro-installer/r5p_config_node_apps_plugins.sh",
-      "sudo systemctl daemon-reload && sudo systemctl start red5pro",
+      "sudo systemctl daemon-reload && sudo systemctl enable red5pro && sudo systemctl start red5pro",
       "sudo mkdir -p /usr/local/red5pro/certs",
       "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem >/dev/null",
       "echo '${try(file(var.https_ssl_certificate_key_path), "")}' | sudo tee -a /usr/local/red5pro/certs/privkey.pem >/dev/null",
