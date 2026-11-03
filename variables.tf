@@ -542,6 +542,72 @@ variable "kafka_standalone_instance_arhive_url" {
   default     = "https://archive.apache.org/dist/kafka/3.9.2/kafka_2.13-3.9.2.tgz"
 }
 
+# RabbitMQ configuration
+variable "rabbitmq_create" {
+  description = "Create RabbitMQ instances (cluster/autoscale only) true/false"
+  type        = bool
+  default     = false
+}
+variable "rabbitmq_mode" {
+  description = "RabbitMQ deployment mode: single - one instance, cluster - 3 instances in a RabbitMQ cluster"
+  type        = string
+  default     = "single"
+  validation {
+    condition     = contains(["single", "cluster"], var.rabbitmq_mode)
+    error_message = "The rabbitmq_mode value must be single or cluster"
+  }
+}
+variable "rabbitmq_image" {
+  description = "RabbitMQ Docker image"
+  type        = string
+  default     = "rabbitmq:4.3.6-management"
+}
+variable "rabbitmq_instance_type" {
+  description = "RabbitMQ instance type"
+  type        = string
+  default     = "g6-standard-2"
+}
+variable "rabbitmq_user" {
+  description = "RabbitMQ user name"
+  type        = string
+  default     = "red5pro"
+  validation {
+    condition     = can(regex("^[A-Za-z0-9_-]+$", var.rabbitmq_user))
+    error_message = "The rabbitmq_user value must contain only letters, digits, '_' and '-'"
+  }
+}
+variable "rabbitmq_password" {
+  description = "RabbitMQ user password, empty value - generate a random password"
+  type        = string
+  default     = ""
+  sensitive   = true
+  validation {
+    condition     = can(regex("^[A-Za-z0-9_-]*$", var.rabbitmq_password))
+    error_message = "The rabbitmq_password value must contain only letters, digits, '_' and '-'"
+  }
+}
+variable "rabbitmq_inbound_rules" {
+  description = "The inbound firewall rules for RabbitMQ instances. Inbound policy is DROP, AMQP port 5672 is always allowed from the VPC subnets, cluster ports between RabbitMQ instances"
+  type = list(object({
+    label    = string
+    action   = string
+    protocol = string
+    ports    = string
+    ipv4     = list(string)
+    ipv6     = list(string)
+  }))
+  default = [
+    {
+      label    = "rabbitmq-ssh"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "22"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    }
+  ]
+}
+
 # Red5 Pro Node image configuration
 variable "node_image_create" {
   description = "Create new Node image true/false."
@@ -730,6 +796,74 @@ variable "stream_manager_spatial_password" {
   description = "value to set the user password for Stream Manager 2.0 spatial"
   type        = string
   default     = ""
+}
+variable "stream_manager_intent_user" {
+  description = "value to set the user name for Stream Manager 2.0 intent API (ROLE_INTENT)"
+  type        = string
+  default     = "intent_admin"
+}
+variable "stream_manager_intent_password" {
+  description = "value to set the user password for Stream Manager 2.0 intent API (ROLE_INTENT). Generated when empty"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+# Red5 Pro Stream Proxy configuration
+variable "stream_proxy_enable" {
+  description = "Deploy Red5 Pro Stream Proxy alongside the Stream Manager 2.0 services. Supported for deployment type cluster only. It publishes RTMP/RTMPS 1935-1944, RTSP/RTSPS 8554-8563 and SRT 10100-10149 on the Stream Manager instance, and the matching rules are added to the Stream Manager firewall."
+  type        = bool
+  default     = false
+}
+variable "stream_proxy_version" {
+  description = "Red5 Pro Stream Proxy docker image version, used only when stream_proxy_enable = true. Example: main.b41"
+  type        = string
+  default     = ""
+}
+variable "stream_proxy_inbound_rules" {
+  description = "The inbound firewall rules for stream manager - Stream Proxy, used only when stream_proxy_enable = true"
+  type = list(object({
+    label    = string
+    action   = string
+    protocol = string
+    ports    = string
+    ipv4     = list(string)
+    ipv6     = list(string)
+  }))
+  default = [
+    {
+      label    = "stream-proxy-rtmp"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "1935-1944"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "stream-proxy-rtsp"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "8554-8563"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "stream-proxy-rtsp-udp"
+      action   = "ACCEPT"
+      protocol = "UDP"
+      ports    = "8554-8558"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    },
+    {
+      label    = "stream-proxy-srt"
+      action   = "ACCEPT"
+      protocol = "UDP"
+      ports    = "10100-10149"
+      ipv4     = ["0.0.0.0/0"]
+      ipv6     = ["::/0"]
+    }
+  ]
 }
 variable "stream_manager_version" {
   description = "value to set the version for Stream Manager 2.0"

@@ -22,6 +22,23 @@ locals {
   stream_manager_url               = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
   red5pro_node_image_name          = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
   red5pro_node_security_group_name = local.cluster_or_autoscale ? linode_firewall.node_firewall[0].label : ""
+  rabbitmq_create                  = local.cluster_or_autoscale && var.rabbitmq_create
+  rabbitmq_node_count              = local.rabbitmq_create ? var.rabbitmq_mode == "cluster" ? 3 : 1 : 0
+  rabbitmq_password                = local.rabbitmq_create ? var.rabbitmq_password != "" ? var.rabbitmq_password : random_password.rabbitmq_password[0].result : ""
+  # RabbitMQ listens on the VPC interface, AMQP is open for all subnets of the VPC
+  rabbitmq_private_ips           = [for networking in data.linode_instance_networking.red5pro_rabbitmq : networking.ipv4[0].vpc[0].address]
+  rabbitmq_amqp_source_ranges    = var.vpc_use_existing ? [for subnet in try(data.linode_vpc_subnets.existing_vpc_all_subnets[0].vpc_subnets, []) : subnet.ipv4] : [var.subnet_cidr]
+  stream_manager_intent_password = local.cluster_or_autoscale ? var.stream_manager_intent_password != "" ? var.stream_manager_intent_password : random_password.r5as_intent_password[0].result : ""
+  # The Stream Proxy selects a node group by the letter at the end of its name, A first,
+  # then B and so on, so with the proxy the name ends with A. Node group name is max 16 characters.
+  node_group_name = local.stream_proxy_enable ? "${trimsuffix(substr(var.name, 0, 14), "-")}-A" : substr(var.name, 0, 16)
+  # Stream Proxy runs in the Stream Manager compose stack, deployment type cluster only
+  stream_proxy_enable = local.cluster && var.stream_proxy_enable
+  # The public IP is used instead of stream_manager_public_hostname on purpose: nginx
+  # inside the Stream Proxy resolves host names through public resolvers, which fails in
+  # a VPC without outbound DNS. Traefik accepts the Stream Manager public IP as a host,
+  # it is in the router rules together with TRAEFIK_HOST.
+  stream_proxy_sm_url = "${local.stream_manager_ssl == "none" ? "http" : "https"}://${local.stream_manager_ip}"
 }
 
 ################################################################################
@@ -325,6 +342,80 @@ resource "null_resource" "red5pro_kafka" {
 }
 
 ################################################################################
+# RabbitMQ servers - (Linode Instances)
+################################################################################
+resource "random_password" "rabbitmq_password" {
+  count   = local.rabbitmq_create && var.rabbitmq_password == "" ? 1 : 0
+  length  = 32
+  special = false
+}
+
+resource "random_password" "rabbitmq_erlang_cookie" {
+  count   = local.rabbitmq_create ? 1 : 0
+  length  = 32
+  special = false
+  upper   = true
+  lower   = false
+  numeric = false
+}
+
+resource "linode_instance" "red5pro_rabbitmq" {
+  count           = local.rabbitmq_node_count
+  label           = "${var.name}-rabbitmq-${count.index + 1}"
+  image           = "linode/ubuntu${var.ubuntu_version}"
+  region          = var.linode_region
+  type            = var.rabbitmq_instance_type
+  authorized_keys = [replace(local.ssh_public_key, "\n", "")]
+
+  interface {
+    purpose = "public"
+  }
+
+  interface {
+    purpose   = "vpc"
+    subnet_id = local.subnet_id
+  }
+}
+
+# VPC IP addresses of the RabbitMQ instances
+data "linode_instance_networking" "red5pro_rabbitmq" {
+  count     = local.rabbitmq_node_count
+  linode_id = linode_instance.red5pro_rabbitmq[count.index].id
+}
+
+resource "null_resource" "red5pro_rabbitmq" {
+  count = local.rabbitmq_node_count
+
+  connection {
+    host        = tolist(linode_instance.red5pro_rabbitmq[count.index].ipv4)[0]
+    type        = "ssh"
+    user        = "root"
+    private_key = local.ssh_private_key
+  }
+
+  provisioner "file" {
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/root"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "cloud-init status --wait",
+      "export RMQ_IMAGE='${var.rabbitmq_image}'",
+      "export RMQ_USER='${var.rabbitmq_user}'",
+      "export RMQ_PASSWORD='${nonsensitive(local.rabbitmq_password)}'",
+      "export RMQ_ERLANG_COOKIE='${nonsensitive(random_password.rabbitmq_erlang_cookie[0].result)}'",
+      "export RMQ_NODE_INDEX='${count.index + 1}'",
+      "export RMQ_NODE_IPS='${join(",", local.rabbitmq_private_ips)}'",
+      "cd /root/red5pro-installer/",
+      "chmod +x /root/red5pro-installer/*.sh",
+      "/root/red5pro-installer/r5p_rabbitmq_install.sh",
+    ]
+  }
+  depends_on = [linode_instance.red5pro_rabbitmq, linode_firewall.rabbitmq_firewall]
+}
+
+################################################################################
 # Red5 Pro Stream Manager 2.0 - (Linode Instance)
 ################################################################################
 
@@ -341,6 +432,30 @@ resource "random_password" "r5as_auth_secret" {
 resource "random_id" "r5as_secrets_key" {
   count       = local.cluster_or_autoscale ? 1 : 0
   byte_length = 32
+}
+
+resource "random_password" "r5as_intent_password" {
+  count   = local.cluster_or_autoscale && var.stream_manager_intent_password == "" ? 1 : 0
+  length  = 24
+  special = false
+}
+
+# Stream Proxy configuration check, it is a separate resource so the errors are
+# reported before anything is created
+resource "terraform_data" "validate_stream_proxy" {
+  count = var.stream_proxy_enable ? 1 : 0
+  input = var.stream_proxy_version
+
+  lifecycle {
+    precondition {
+      condition     = local.cluster
+      error_message = "ERROR! stream_proxy_enable = true is supported only for type = cluster, current type is ${var.type}. The Stream Proxy runs on the Stream Manager instance and its RTMP, RTSP and SRT ports cannot be served by the NodeBalancer of the autoscale deployment."
+    }
+    precondition {
+      condition     = var.stream_proxy_version != ""
+      error_message = "ERROR! Value in variable stream_proxy_version is required when stream_proxy_enable = true! Example: main.b41"
+    }
+  }
 }
 
 resource "linode_instance" "red5pro_sm" {
@@ -400,6 +515,8 @@ resource "linode_instance" "red5pro_sm" {
       "R5AS_PROXY_PASS=${var.stream_manager_proxy_password}",
       "R5AS_SPATIAL_USER=${var.stream_manager_spatial_user}",
       "R5AS_SPATIAL_PASS=${var.stream_manager_spatial_password}",
+      "R5AS_INTENT_USER=${var.stream_manager_intent_user}",
+      "R5AS_INTENT_PASS=${local.stream_manager_intent_password}",
       "R5AS_CONFERENCE_SECRET=${random_id.r5as_conference_secret[0].hex}",
       "R5AS_NODE_API_ACCESS_TOKEN=${var.red5pro_api_key}",
       "CONTAINER_REGISTRY=${var.stream_manager_container_registry}",
@@ -436,10 +553,12 @@ resource "null_resource" "red5pro_sm" {
       AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}
       AS_ADMIN_UI_LINODE_VPC=${local.vpc_name}
       AS_ADMIN_UI_LINODE_SECURITY_GROUP=${local.red5pro_node_security_group_name}
+      ${local.stream_proxy_enable ? "STREAM_PROXY_VERSION=${var.stream_proxy_version}\nR5SP_STREAM_MANAGER_URL=${local.stream_proxy_sm_url}" : ""}
       EOM
       EOT
       ,
       "export SM_SSL='${local.stream_manager_ssl}'",
+      "export STREAM_PROXY_ENABLE='${local.stream_proxy_enable}'",
       "export SM_STANDALONE=true",
       "export KAFKA_REPLICAS='${local.kafka_on_sm_replicas}'",
       "export CONTAINER_REGISTRY='${var.stream_manager_container_registry}'",
@@ -633,7 +752,7 @@ resource "null_resource" "node_group" {
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_create_node_group.sh"
     environment = {
       SM_IP                                          = local.stream_manager_ip
-      NODE_GROUP_NAME                                = substr(var.name, 0, 16)
+      NODE_GROUP_NAME                                = local.node_group_name
       R5AS_AUTH_USER                                 = var.stream_manager_auth_user
       R5AS_AUTH_PASS                                 = var.stream_manager_auth_password
       NODE_GROUP_CLOUD_PLATFORM                      = "LINODE"

@@ -59,3 +59,29 @@ output "r5as_conference_secret" {
   description = "Auto-generated R5AS Conference secret (hex)"
   value       = try(random_id.r5as_conference_secret[0].hex, "")
 }
+output "rabbitmq_private_ips" {
+  description = "RabbitMQ instances VPC IPs (use as rmq1.address, rmq2.address for nodes in the same VPC)"
+  value       = local.rabbitmq_private_ips
+}
+output "rabbitmq_public_ips" {
+  description = "RabbitMQ instances public IPs"
+  value       = [for instance in linode_instance.red5pro_rabbitmq : tolist(instance.ipv4)[0]]
+}
+output "rabbitmq_user" {
+  description = "RabbitMQ user name"
+  value       = local.rabbitmq_create ? var.rabbitmq_user : ""
+}
+output "rabbitmq_password" {
+  description = "RabbitMQ user password"
+  value       = local.rabbitmq_password
+  sensitive   = true
+}
+output "stream_manager_intent_user" {
+  description = "Stream Manager 2.0 intent API user name"
+  value       = local.cluster_or_autoscale ? var.stream_manager_intent_user : ""
+}
+output "stream_manager_intent_password" {
+  description = "Stream Manager 2.0 intent API user password"
+  value       = local.stream_manager_intent_password
+  sensitive   = true
+}

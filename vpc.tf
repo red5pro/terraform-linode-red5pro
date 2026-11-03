@@ -39,6 +39,12 @@ data "linode_vpc_subnets" "existing_subnet" {
   }
 }
 
+# All subnets of the existing VPC, used for the RabbitMQ firewall
+data "linode_vpc_subnets" "existing_vpc_all_subnets" {
+  count  = local.rabbitmq_create && var.vpc_use_existing ? 1 : 0
+  vpc_id = data.linode_vpcs.existing_vpc[0].vpcs[0].id
+}
+
 # Firewall - Red5Pro Standalone
 resource "linode_firewall" "standalone_firewall" {
   count = local.standalone ? 1 : 0
@@ -67,7 +73,7 @@ resource "linode_firewall" "sm_firewall" {
   label = "${var.name}-sm-fw"
 
   dynamic "inbound" {
-    for_each = var.sm_inbound_rules
+    for_each = concat(var.sm_inbound_rules, local.stream_proxy_enable ? var.stream_proxy_inbound_rules : [])
     content {
       label    = inbound.value.label
       action   = inbound.value.action
@@ -147,4 +153,45 @@ resource "linode_firewall" "nodebalancer_firewall" {
   inbound_policy  = "ACCEPT"
   outbound_policy = "ACCEPT"
   nodebalancers   = concat(linode_nodebalancer.red5pro_lb[*].id)
+}
+
+# RabbitMQ Firewall, inbound traffic is dropped unless a rule allows it
+resource "linode_firewall" "rabbitmq_firewall" {
+  count = local.rabbitmq_create ? 1 : 0
+  label = "${var.name}-rabbitmq-fw"
+
+  dynamic "inbound" {
+    for_each = var.rabbitmq_inbound_rules
+    content {
+      label    = inbound.value.label
+      action   = inbound.value.action
+      protocol = inbound.value.protocol
+      ports    = inbound.value.ports
+      ipv4     = inbound.value.ipv4
+      ipv6     = inbound.value.ipv6
+    }
+  }
+
+  inbound {
+    label    = "rabbitmq-amqp"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ports    = "5672"
+    ipv4     = local.rabbitmq_amqp_source_ranges
+  }
+
+  dynamic "inbound" {
+    for_each = local.rabbitmq_node_count > 1 ? [1] : []
+    content {
+      label    = "rabbitmq-cluster"
+      action   = "ACCEPT"
+      protocol = "TCP"
+      ports    = "4369,25672,35672-35682"
+      ipv4     = [for ip in local.rabbitmq_private_ips : "${ip}/32"]
+    }
+  }
+
+  inbound_policy  = "DROP"
+  outbound_policy = "ACCEPT"
+  linodes         = concat(linode_instance.red5pro_rabbitmq[*].id)
 }
